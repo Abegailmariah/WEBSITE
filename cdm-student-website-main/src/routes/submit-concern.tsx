@@ -17,7 +17,7 @@ export const Route = createFileRoute("/submit-concern")({
   component: SubmitConcernPage,
 });
 
-const institutes = ["IC", "IE", "IT", "IBEM", "IAS"];
+const institutes = ["ICS", "IBE", "ITE"];
 const programs = ["BSIT", "BSCS", "BSCpE"];
 
 function SubmitConcernPage() {
@@ -35,17 +35,35 @@ function SubmitConcernPage() {
     const form = e.target as HTMLFormElement;
     const fd = new FormData(form);
 
-    const payload: SubmitConcernPayload = {
-      last: String(fd.get("last") ?? ""),
-      first: String(fd.get("first") ?? ""),
-      middle: String(fd.get("middle") ?? "") || undefined,
-      studentNumber: String(fd.get("studentNumber") ?? ""),
-      section: String(fd.get("section") ?? ""),
-      institute: String(fd.get("institute") ?? ""),
-      program: String(fd.get("program") ?? ""),
-      type: String(fd.get("type") ?? "") as SubmitConcernPayload["type"],
-      message: String(fd.get("message") ?? ""),
+    const payloadDraft = {
+      last: String(fd.get("last") ?? "").trim(),
+      first: String(fd.get("first") ?? "").trim(),
+      middle: String(fd.get("middle") ?? "").trim() || undefined,
+      studentNumber: String(fd.get("studentNumber") ?? "").trim(),
+      section: String(fd.get("section") ?? "").trim(),
+      institute: String(fd.get("institute") ?? "").trim(),
+      program: String(fd.get("program") ?? "").trim(),
+      type: String(fd.get("type") ?? "").trim() as SubmitConcernPayload["type"],
+      message: String(fd.get("message") ?? "").trim(),
     };
+
+    const missing = Object.entries(payloadDraft)
+      .filter(([_, v]) => typeof v === "string" ? v.length === 0 : false)
+      .map(([k]) => k);
+
+    if (missing.length) {
+      setErrorMessage(`Please fill out: ${missing.join(", ")}.`);
+      return;
+    }
+
+    // Validate student number is numeric
+    if (!/^\d+$/.test(payloadDraft.studentNumber)) {
+      setErrorMessage("Student number must contain only numbers.");
+      setSubmitting(false);
+      return;
+    }
+
+    const payload: SubmitConcernPayload = payloadDraft;
 
     try {
       await submitConcern(payload);
@@ -91,11 +109,11 @@ function SubmitConcernPage() {
       >
         <fieldset className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className={label}>Last name</label>
+            <label className={label}>Last name <span className="text-destructive">*</span></label>
             <input required name="last" className={input} />
           </div>
           <div>
-            <label className={label}>First name</label>
+            <label className={label}>First name <span className="text-destructive">*</span></label>
             <input required name="first" className={input} />
           </div>
           <div>
@@ -106,7 +124,7 @@ function SubmitConcernPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>Student Number</label>
+            <label className={label}>Student Number <span className="text-destructive">*</span></label>
             <input required name="studentNumber" className={input} placeholder="20xx-xxxxx" />
           </div>
           <div>
@@ -117,27 +135,35 @@ function SubmitConcernPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>Institute</label>
+            <label className={label}>Institute <span className="text-destructive">*</span></label>
             <select required name="institute" className={input} defaultValue="">
               <option value="" disabled>Select institute</option>
-              {institutes.map((i) => <option key={i} value={i}>{i}</option>)}
+              {institutes.map((i) => (
+                <option key={i} value={i}>
+                  {i}
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <label className={label}>Program</label>
             <select required name="program" className={input} defaultValue="">
               <option value="" disabled>Select program</option>
-              {programs.map((p) => <option key={p} value={p}>{p}</option>)}
+              {programs.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
         <div>
-          <span className={label}>Type of Concern</span>
+          <span className={label}>Type of Concern <span className="text-destructive">*</span></span>
           <div className="flex flex-wrap gap-4 mt-1">
             {["Complaint", "Question", "Suggestion"].map((t) => (
               <label key={t} className="inline-flex items-center gap-2 text-sm">
-                <input type="radio" required name="type" value={t} className="accent-[oklch(0.38_0.14_25)]" />
+                <input type="radio" required name="type" value={t} className="accent-primary" />
                 {t}
               </label>
             ))}

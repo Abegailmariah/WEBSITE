@@ -69,16 +69,16 @@
   --card-foreground: oklch(0.2 0.02 20);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.02 20);
-  /* CdM Maroon */
-  --primary: oklch(0.38 0.14 25);
+  /* Kombu Green */
+  --primary: oklch(0.33 0.04 145);
   --primary-foreground: oklch(0.98 0.02 90);
-  /* CdM Gold */
-  --secondary: oklch(0.82 0.15 85);
-  --secondary-foreground: oklch(0.25 0.05 25);
+  /* Orange */
+  --secondary: oklch(0.72 0.18 50);
+  --secondary-foreground: oklch(0.20 0.04 30);
   --muted: oklch(0.95 0.005 90);
   --muted-foreground: oklch(0.45 0.02 25);
-  --accent: oklch(0.82 0.15 85);
-  --accent-foreground: oklch(0.25 0.05 25);
+  --accent: oklch(0.72 0.18 50);
+  --accent-foreground: oklch(0.20 0.04 30);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
