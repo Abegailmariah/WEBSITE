@@ -25,3 +25,17 @@
 - [x] Added error state with retry button
 - [x] Added empty state for announcements
 
+---
+
+## ✅ Step 6: Backend API Server — NEW!
+- [x] Created `backend/` directory with Express.js + TypeScript + SQLite (sql.js)
+- [x] `GET /announcements` — fetch all announcements from database
+- [x] `POST /announcements` — create a new announcement
+- [x] `POST /submit-concern` — submit a student concern with validation
+- [x] Auto-seeds 5 mock announcements into SQLite on first run
+- [x] Created `.env` for frontend pointing to `localhost:8000`
+- [x] Created `.env.example` documenting the environment variables
+- [x] CORS enabled for cross-origin requests
+- [x] Error handling with proper HTTP status codes
+- [x] Tested all endpoints — all passing
+

@@ -25,8 +25,7 @@ const institutes = [
 
 const programs = [
   "BSIT",
-  "BSCS",
-  "BSCpE",
+  "BSCPE",
   "BSBA HRM",
   "BS ENTREP",
   "BSEd SCIENCE",
