@@ -17,30 +17,13 @@ export const Route = createFileRoute("/submit-concern")({
   component: SubmitConcernPage,
 });
 
-const institutes = [
-  "ICS — Institute of Computer Studies",
-  "IBE — Institute of Business and Entrepreneurship",
-  "ITE — Institute of Teacher Education",
-];
-
-const programs = [
-  "BSIT",
-  "BSCS",
-  "BSCpE",
-  "BSBA HRM",
-  "BS ENTREP",
-  "BSEd SCIENCE",
-  "BECEd",
-  "BEEd",
-  "BTLEd ICT",
-];
+const institutes = ["ICS", "IBE", "ITE"];
+const programs = ["BSIT", "BSCS", "BSCpE"];
 
 function SubmitConcernPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [messageLength, setMessageLength] = useState(0);
-  const MAX_MESSAGE_LENGTH = 2000;
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -189,27 +172,7 @@ function SubmitConcernPage() {
 
         <div>
           <label className={label}>Message</label>
-          <textarea
-            required
-            name="message"
-            rows={5}
-            className={input}
-            placeholder="Describe your concern in detail..."
-            maxLength={MAX_MESSAGE_LENGTH}
-            onChange={(e) => setMessageLength(e.target.value.length)}
-          />
-          <div className="flex justify-between items-center mt-1">
-            {messageLength > 0 && (
-              <span
-                className={`text-xs ${
-                  messageLength >= MAX_MESSAGE_LENGTH ? "text-destructive font-medium" : "text-muted-foreground"
-                }`}
-              >
-                {messageLength}/{MAX_MESSAGE_LENGTH}
-              </span>
-            )}
-            {messageLength === 0 && <span />}
-          </div>
+          <textarea required name="message" rows={5} className={input} placeholder="Describe your concern in detail..." />
         </div>
 
         <div className="flex justify-end">

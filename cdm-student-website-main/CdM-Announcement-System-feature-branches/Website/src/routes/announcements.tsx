@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAnnouncements, type Announcement } from "@/lib/announcements-api";
 
 export const Route = createFileRoute("/announcements")({
   head: () => ({
@@ -15,24 +13,27 @@ export const Route = createFileRoute("/announcements")({
   component: AnnouncementsPage,
 });
 
+type Announcement = {
+  id: number;
+  title: string;
+  date: string;
+  priority: "Critical" | "Normal";
+  content: string;
+};
+
+const mockAnnouncements: Announcement[] = [
+  { id: 1, title: "Class Suspension", date: "Oct 20", priority: "Critical", content: "Classes are suspended due to typhoon. Stay safe and monitor official channels for updates." },
+  { id: 2, title: "Enrollment Schedule", date: "Oct 25", priority: "Normal", content: "Enrollment for this Semester starts. Please prepare your requirements early.\n\n1st Year: October 25-26\n2nd Year: October 27-28\n3rd Year: October 29-30\n4th Year: October 31 - November 1" },
+  { id: 3, title: "OJT Orientation", date: "Nov 03", priority: "Normal", content: "Mandatory OJT orientation for all 4th-year students at the AVR." },
+  { id: 4, title: "System Maintenance", date: "Nov 08", priority: "Critical", content: "The student portal will be under maintenance from 10PM to 2AM." },
+  { id: 5, title: "Scholarship Application", date: "Nov 10", priority: "Normal", content: "Scholarship applications are now open for the upcoming semester!\n\nEligible students may apply for:\n- TES (Tertiary Education Subsidy)\n- TDP (Tulong Dunong Program)\n \nDeadline: November 30\nLocation: Registrar's Office\n\nFor inquiries, visit the Scholarship Office or email scholarships@cdm.edu.ph." },
+];
+
 function AnnouncementsPage() {
   const [open, setOpen] = useState<Announcement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  const {
-    data: announcements = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["announcements"],
-    queryFn: fetchAnnouncements,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
-  });
 
   // Focus trap: lock focus inside modal while open, restore on close
   useEffect(() => {
@@ -53,77 +54,6 @@ function AnnouncementsPage() {
     }
   }
 
-  // Loading skeleton
-  if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-          <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-        </header>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="bg-card border rounded-lg p-5 shadow-sm animate-pulse">
-              <div className="flex items-center justify-between mb-2">
-                <div className="h-3 w-16 bg-muted rounded" />
-                <div className="h-4 w-14 bg-muted rounded-full" />
-              </div>
-              <div className="h-5 w-3/4 bg-muted rounded mb-3" />
-              <div className="h-3 w-full bg-muted rounded mb-1" />
-              <div className="h-3 w-5/6 bg-muted rounded mb-1" />
-              <div className="h-3 w-2/3 bg-muted rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-          <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-        </header>
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-center">
-          <p className="text-destructive font-medium">
-            Failed to load announcements.
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {error instanceof Error ? error.message : "An unexpected error occurred."}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium hover:brightness-110 transition"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (announcements.length === 0) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-          <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-        </header>
-        <div className="rounded-lg border bg-card p-10 text-center">
-          <div className="text-4xl mb-3">📢</div>
-          <p className="text-lg font-medium text-foreground">No announcements yet</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Check back later for official updates.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <header className="mb-8">
@@ -137,7 +67,7 @@ function AnnouncementsPage() {
         role="region"
         aria-label="All announcements list"
       >
-        {announcements.map((a) => (
+        {mockAnnouncements.map((a) => (
           <article key={a.id} className="bg-card border rounded-lg p-5 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-muted-foreground">{a.date}</span>
