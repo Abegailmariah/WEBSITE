@@ -13,10 +13,10 @@ const contactInfo = [
     label: "Address",
     value: "Colegio de Montalban, Kasiglahan Village, Rodriguez (Montalban), Rizal, Philippines",
   },
-  {
+{
     label: "Facebook",
-    value: "Colegio de Montalban Official (Pamantasan ng Montalban)",
-    link: "https://www.facebook.com/ColegioDeMontalbanOfficial",
+    value: "Colegio de Montalban Official",
+    link: "https://www.facebook.com/official.colegiodemontalban",
   },
   { label: "Email", value: "info@cdm.edu.ph" },
 ];

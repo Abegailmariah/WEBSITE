@@ -17,12 +17,12 @@ const contactCards = [
     icon: "📍",
     title: "Address",
     lines: ["Colegio de Montalban", "Kasiglahan Village, Rodriguez, Philippines, 1860", "(Montalban), Rizal, Philippines"],
-  },
+},
   {
     icon: "👍",
     title: "Facebook",
-    link: "https://www.facebook.com/ColegioDeMontalbanOfficial",
-    linkLabel: "Colegio de Montalban Official (Pamantasan ng Montalban)",
+    link: "https://www.facebook.com/official.colegiodemontalban",
+    linkLabel: "Colegio de Montalban Official",
     lines: [],
   },
   {
