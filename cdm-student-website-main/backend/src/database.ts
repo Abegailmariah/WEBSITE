@@ -76,7 +76,8 @@ function seedIfEmpty(database: SqlJsDatabase): void {
       title: "Class Suspension",
       date: "Oct 20, 2025",
       priority: "Critical",
-      content: "Classes are suspended due to typhoon. Stay safe and monitor official channels for updates.",
+      content:
+        "Classes are suspended due to typhoon. Stay safe and monitor official channels for updates.",
     },
     {
       title: "Enrollment Schedule",
@@ -107,11 +108,16 @@ function seedIfEmpty(database: SqlJsDatabase): void {
   ];
 
   const stmt = database.prepare(
-    "INSERT INTO announcements (title, date, priority, content) VALUES (@title, @date, @priority, @content)"
+    "INSERT INTO announcements (title, date, priority, content) VALUES (@title, @date, @priority, @content)",
   );
 
   for (const item of seedData) {
-    stmt.bind({ "@title": item.title, "@date": item.date, "@priority": item.priority, "@content": item.content });
+    stmt.bind({
+      "@title": item.title,
+      "@date": item.date,
+      "@priority": item.priority,
+      "@content": item.content,
+    });
     stmt.run();
     stmt.reset();
   }
@@ -140,10 +146,12 @@ export async function getAllAnnouncements(): Promise<Announcement[]> {
 
 export async function createAnnouncement(announcement: Announcement): Promise<Announcement> {
   const database = await getDatabase();
-  database.run(
-    "INSERT INTO announcements (title, date, priority, content) VALUES (?, ?, ?, ?)",
-    [announcement.title, announcement.date, announcement.priority, announcement.content]
-  );
+  database.run("INSERT INTO announcements (title, date, priority, content) VALUES (?, ?, ?, ?)", [
+    announcement.title,
+    announcement.date,
+    announcement.priority,
+    announcement.content,
+  ]);
   saveDatabase(database);
 
   const result = database.exec("SELECT last_insert_rowid() as id");
@@ -166,7 +174,7 @@ export async function createConcern(concern: Concern): Promise<Concern> {
       concern.program,
       concern.type,
       concern.message,
-    ]
+    ],
   );
   saveDatabase(database);
 
@@ -174,4 +182,3 @@ export async function createConcern(concern: Concern): Promise<Concern> {
   const id = result[0].values[0][0] as number;
   return { id, ...concern, status: "Pending" };
 }
-

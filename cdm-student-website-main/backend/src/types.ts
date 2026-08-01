@@ -21,4 +21,3 @@ export interface Concern {
   status?: "Pending" | "Read" | "Resolved";
   created_at?: string;
 }
-

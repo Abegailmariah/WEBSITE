@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -79,17 +81,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "CdM Student Portal — Announcements & Concerns" },
-      { name: "Description", content: "Colegio de Montalban student portal for announcements and submitting concerns." },
+      {
+        name: "Description",
+        content: "Colegio de Montalban student portal for announcements and submitting concerns.",
+      },
       { name: "author", content: "Colegio de Montalban" },
       { property: "og:title", content: "CdM Student Portal — Announcements & Concerns" },
-      { property: "og:Description", content: "Colegio de Montalban student portal for announcements and submitting concerns." },
+      {
+        property: "og:Description",
+        content: "Colegio de Montalban student portal for announcements and submitting concerns.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "CdM Student Portal — Announcements & Concerns" },
-      { name: "twitter:Description", content: "Colegio de Montalban student portal for announcements and submitting concerns." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22ad405e-0b4e-42e8-a90d-565eae210100/id-preview-7b4776d6--5936f25b-1289-48e2-ba16-a8910d06fdd3.lovable.app-1784340446716.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22ad405e-0b4e-42e8-a90d-565eae210100/id-preview-7b4776d6--5936f25b-1289-48e2-ba16-a8910d06fdd3.lovable.app-1784340446716.png" },
+      {
+        name: "twitter:Description",
+        content: "Colegio de Montalban student portal for announcements and submitting concerns.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22ad405e-0b4e-42e8-a90d-565eae210100/id-preview-7b4776d6--5936f25b-1289-48e2-ba16-a8910d06fdd3.lovable.app-1784340446716.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22ad405e-0b4e-42e8-a90d-565eae210100/id-preview-7b4776d6--5936f25b-1289-48e2-ba16-a8910d06fdd3.lovable.app-1784340446716.png",
+      },
     ],
     links: [
       {
@@ -109,22 +128,6 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Prevent flash of wrong theme: apply dark class immediately if stored */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('cdm-theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch(e) {}
-              })();
-            `,
-          }}
-        />
         <HeadContent />
       </head>
       <body>
@@ -145,6 +148,8 @@ function RootComponent() {
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </main>
+      <Footer />
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }

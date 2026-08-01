@@ -1,17 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { submitConcern, type SubmitConcernPayload } from "@/lib/submit-concern-api";
-
-
 
 export const Route = createFileRoute("/submit-concern")({
   head: () => ({
     meta: [
       { title: "Submit a Concern — CdM Student Portal" },
-      { name: "description", content: "Submit a complaint, question, or suggestion to Colegio de Montalban." },
+      {
+        name: "description",
+        content: "Submit a complaint, question, or suggestion to Colegio de Montalban.",
+      },
       { property: "og:title", content: "Submit a Concern — CdM" },
-      { property: "og:description", content: "Send complaints, questions, or suggestions directly to your institute." },
+      {
+        property: "og:description",
+        content: "Send complaints, questions, or suggestions directly to your institute.",
+      },
     ],
   }),
   component: SubmitConcernPage,
@@ -64,7 +69,7 @@ function SubmitConcernPage() {
     };
 
     const missing = Object.entries(payloadDraft)
-      .filter(([_, v]) => typeof v === "string" ? v.length === 0 : false)
+      .filter(([_, v]) => (typeof v === "string" ? v.length === 0 : false))
       .map(([k]) => k);
 
     if (missing.length) {
@@ -84,10 +89,17 @@ function SubmitConcernPage() {
     try {
       await submitConcern(payload);
       setSubmitted(true);
+      toast.success("Concern submitted!", {
+        description: "Thank you! Your concern has been recorded.",
+      });
       form.reset();
       setTimeout(() => setSubmitted(false), 4000);
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Submission failed");
+      const message = err instanceof Error ? err.message : "Submission failed";
+      setErrorMessage(message);
+      toast.error("Submission failed", {
+        description: message,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -118,18 +130,18 @@ function SubmitConcernPage() {
         </div>
       )}
 
-
-      <form
-        onSubmit={onSubmit}
-        className="bg-card border rounded-lg shadow-sm p-6 grid gap-5"
-      >
+      <form onSubmit={onSubmit} className="bg-card border rounded-lg shadow-sm p-6 grid gap-5">
         <fieldset className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className={label}>Last name <span className="text-destructive">*</span></label>
+            <label className={label}>
+              Last name <span className="text-destructive">*</span>
+            </label>
             <input required name="last" className={input} />
           </div>
           <div>
-            <label className={label}>First name <span className="text-destructive">*</span></label>
+            <label className={label}>
+              First name <span className="text-destructive">*</span>
+            </label>
             <input required name="first" className={input} />
           </div>
           <div>
@@ -140,7 +152,9 @@ function SubmitConcernPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>Student Number <span className="text-destructive">*</span></label>
+            <label className={label}>
+              Student Number <span className="text-destructive">*</span>
+            </label>
             <input required name="studentNumber" className={input} placeholder="20xx-xxxxx" />
           </div>
           <div>
@@ -151,9 +165,13 @@ function SubmitConcernPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>Institute <span className="text-destructive">*</span></label>
+            <label className={label}>
+              Institute <span className="text-destructive">*</span>
+            </label>
             <select required name="institute" className={input} defaultValue="">
-              <option value="" disabled>Select institute</option>
+              <option value="" disabled>
+                Select institute
+              </option>
               {institutes.map((i) => (
                 <option key={i} value={i}>
                   {i}
@@ -164,7 +182,9 @@ function SubmitConcernPage() {
           <div>
             <label className={label}>Program</label>
             <select required name="program" className={input} defaultValue="">
-              <option value="" disabled>Select program</option>
+              <option value="" disabled>
+                Select program
+              </option>
               {programs.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -175,7 +195,9 @@ function SubmitConcernPage() {
         </div>
 
         <div>
-          <span className={label}>Type of Concern <span className="text-destructive">*</span></span>
+          <span className={label}>
+            Type of Concern <span className="text-destructive">*</span>
+          </span>
           <div className="flex flex-wrap gap-4 mt-1">
             {["Complaint", "Question", "Suggestion"].map((t) => (
               <label key={t} className="inline-flex items-center gap-2 text-sm">
@@ -201,7 +223,9 @@ function SubmitConcernPage() {
             {messageLength > 0 && (
               <span
                 className={`text-xs ${
-                  messageLength >= MAX_MESSAGE_LENGTH ? "text-destructive font-medium" : "text-muted-foreground"
+                  messageLength >= MAX_MESSAGE_LENGTH
+                    ? "text-destructive font-medium"
+                    : "text-muted-foreground"
                 }`}
               >
                 {messageLength}/{MAX_MESSAGE_LENGTH}

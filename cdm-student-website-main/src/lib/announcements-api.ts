@@ -9,14 +9,10 @@ export type Announcement = {
 const DEFAULT_ANNOUNCEMENTS_ENDPOINT = "http://localhost:8000/announcements";
 
 export function getAnnouncementsEndpoint(): string {
-  const endpoint =
-    (import.meta as any).env?.VITE_ANNOUNCEMENTS_ENDPOINT ??
-    DEFAULT_ANNOUNCEMENTS_ENDPOINT;
+  const env = import.meta.env;
+  const endpoint = env?.VITE_ANNOUNCEMENTS_ENDPOINT ?? DEFAULT_ANNOUNCEMENTS_ENDPOINT;
 
-  if (
-    typeof window !== "undefined" &&
-    !(import.meta as any).env?.VITE_ANNOUNCEMENTS_ENDPOINT
-  ) {
+  if (typeof window !== "undefined" && !env?.VITE_ANNOUNCEMENTS_ENDPOINT) {
     console.warn(
       "[CdM Portal] VITE_ANNOUNCEMENTS_ENDPOINT is not set. Using default:",
       DEFAULT_ANNOUNCEMENTS_ENDPOINT,
@@ -57,8 +53,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "System Maintenance",
     date: "Nov 08",
     priority: "Critical",
-    content:
-      "The student portal will be under maintenance from 10PM to 2AM.",
+    content: "The student portal will be under maintenance from 10PM to 2AM.",
   },
   {
     id: 5,
@@ -82,20 +77,14 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
     });
 
     if (!res.ok) {
-      console.warn(
-        `Announcements API returned HTTP ${res.status}. Falling back to mock data.`,
-      );
+      console.warn(`Announcements API returned HTTP ${res.status}. Falling back to mock data.`);
       return fallbackAnnouncements;
     }
 
     const data: Announcement[] = await res.json();
     return data;
   } catch (err) {
-    console.warn(
-      "Failed to fetch announcements from backend. Falling back to mock data.",
-      err,
-    );
+    console.warn("Failed to fetch announcements from backend. Falling back to mock data.", err);
     return fallbackAnnouncements;
   }
 }
-

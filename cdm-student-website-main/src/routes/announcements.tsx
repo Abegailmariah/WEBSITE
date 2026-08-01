@@ -88,9 +88,7 @@ function AnnouncementsPage() {
           <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
         </header>
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-center">
-          <p className="text-destructive font-medium">
-            Failed to load announcements.
-          </p>
+          <p className="text-destructive font-medium">Failed to load announcements.</p>
           <p className="text-sm text-muted-foreground mt-1">
             {error instanceof Error ? error.message : "An unexpected error occurred."}
           </p>
@@ -153,7 +151,9 @@ function AnnouncementsPage() {
               </span>
             </div>
             <h2 className="text-lg font-semibold text-foreground">{a.title}</h2>
-            <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">{a.content}</p>
+            <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">
+              {a.content}
+            </p>
             <button
               onClick={() => setOpen(a)}
               className="mt-4 self-start text-primary font-medium hover:underline"
@@ -212,4 +212,3 @@ function AnnouncementsPage() {
     </div>
   );
 }
-

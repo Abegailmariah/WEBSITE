@@ -6,17 +6,8 @@ const router = Router();
 // POST /submit-concern — Submit a student concern
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const {
-      last,
-      first,
-      middle,
-      studentNumber,
-      section,
-      institute,
-      program,
-      type,
-      message,
-    } = req.body;
+    const { last, first, middle, studentNumber, section, institute, program, type, message } =
+      req.body;
 
     // Validation
     const errors: string[] = [];
@@ -62,4 +53,3 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 export default router;
-

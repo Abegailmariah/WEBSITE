@@ -15,13 +15,10 @@ const DEFAULT_ENDPOINT = "http://localhost:8000/submit-concern";
 export function getSubmitConcernEndpoint() {
   // Vite convention: import.meta.env.VITE_*
   // Keep it optional so the app can still run without configuration.
-  const endpoint =
-    (import.meta as any).env?.VITE_SUBMIT_CONCERN_ENDPOINT ?? DEFAULT_ENDPOINT;
+  const env = import.meta.env;
+  const endpoint = env?.VITE_SUBMIT_CONCERN_ENDPOINT ?? DEFAULT_ENDPOINT;
 
-  if (
-    typeof window !== "undefined" &&
-    !(import.meta as any).env?.VITE_SUBMIT_CONCERN_ENDPOINT
-  ) {
+  if (typeof window !== "undefined" && !env?.VITE_SUBMIT_CONCERN_ENDPOINT) {
     console.warn(
       "[CdM Portal] VITE_SUBMIT_CONCERN_ENDPOINT is not set. Using default:",
       DEFAULT_ENDPOINT,
@@ -54,10 +51,9 @@ export async function submitConcern(payload: SubmitConcernPayload) {
     const error = new Error(
       `Submit concern failed: HTTP ${res.status}${details ? ` - ${details}` : ""}`,
     );
-    (error as any).status = res.status;
+    (error as Error & { status?: number }).status = res.status;
     throw error;
   }
 
   return res.json().catch(() => ({}));
 }
-
