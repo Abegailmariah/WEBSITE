@@ -1,21 +1,31 @@
-# Fix Errors & Run Full Stack — Progress Tracker
+# Phase 3 — Admin Dashboard — Progress Tracker
 
-## Backend Fixes
-- [x] Install `@types/sql.js` in `backend/`
-- [x] Fix `src/database.ts` implicit `any` errors (row, col, i params)
+## Backend
+- [x] Add admin auth module (PIN → session token) in `backend/src/auth.ts`
+- [x] Add query helpers in `backend/src/database.ts`:
+  - `getAllConcerns()`
+  - `updateConcernStatus(id, status)`
+  - `deleteAnnouncement(id)`
+  - `getStats()`
+- [x] Add `backend/src/routes/admin.ts`:
+  - `POST /admin/login`
+  - `GET /admin/stats`
+  - `GET /admin/concerns`
+  - `PATCH /admin/concerns/:id`
+  - `DELETE /admin/announcements/:id`
+  - Auth middleware
+- [x] Mount admin router in `backend/src/index.ts`
 
-## Frontend Fixes
-- [x] Fix `no-explicit-any` errors in `src/lib/announcements-api.ts`
-- [x] Fix `no-explicit-any` errors in `src/lib/submit-concern-api.ts`
-- [x] Auto-fix prettier formatting errors (`npm run format` / eslint --fix)
+## Frontend
+- [x] Add `src/lib/admin-api.ts` (login, stats, concerns, status update, announcement delete)
+- [x] Add `createAnnouncement` to `src/lib/announcements-api.ts`
+- [x] Create `src/routes/admin.tsx` (login screen + dashboard with tabs)
+- [x] Add an "Admin" link in the footer
 
 ## Verification
-- [x] Backend `tsc --noEmit` passes with 0 errors
-- [ ] Frontend `tsc --noEmit` passes with 0 errors
-- [ ] ESLint clean (no errors)
-
-## Run Both Servers
-- [ ] Start backend API server (`localhost:8000`)
-- [ ] Start frontend dev server (Vite)
-- [ ] Confirm endpoints respond
+- [x] Backend `tsc --noEmit` passes
+- [x] Start backend API server (`localhost:8000`) and test endpoints
+- [x] Verify admin login + dashboard in browser (frontend dev server)
+- [x] Verify announcement create/delete and concern status update flows
+- [ ] Commit and push to GitHub
 

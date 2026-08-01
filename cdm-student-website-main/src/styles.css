@@ -5,15 +5,8 @@
 /*
  * Design system definition.
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
+* The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root block defines the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
  */
 
 @theme inline {
@@ -102,15 +95,8 @@
     border-color: var(--color-border);
   }
 
-  body {
+body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-  }
-
-  /* Smooth theme transitions */
-  *,
-  *::before,
-  *::after {
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.15s ease;
   }
 }

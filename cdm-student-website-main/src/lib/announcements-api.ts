@@ -6,6 +6,13 @@ export type Announcement = {
   content: string;
 };
 
+export type NewAnnouncement = {
+  title: string;
+  date: string;
+  priority: "Critical" | "Normal";
+  content: string;
+};
+
 const DEFAULT_ANNOUNCEMENTS_ENDPOINT = "http://localhost:8000/announcements";
 
 export function getAnnouncementsEndpoint(): string {
@@ -87,4 +94,28 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
     console.warn("Failed to fetch announcements from backend. Falling back to mock data.", err);
     return fallbackAnnouncements;
   }
+}
+
+export async function createAnnouncement(
+  announcement: NewAnnouncement,
+): Promise<Announcement> {
+  const endpoint = getAnnouncementsEndpoint();
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(announcement),
+  });
+
+  if (!res.ok) {
+    let details = "";
+    try {
+      details = await res.text();
+    } catch {
+      // ignore
+    }
+    throw new Error(`Failed to create announcement: HTTP ${res.status}${details ? ` - ${details}` : ""}`);
+  }
+
+  return res.json() as Promise<Announcement>;
 }

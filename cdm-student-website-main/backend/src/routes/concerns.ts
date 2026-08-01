@@ -1,6 +1,14 @@
 import { Router, type Request, type Response } from "express";
 import { createConcern } from "../database.js";
 
+// Strip HTML tags and trim whitespace
+function sanitize(str: string): string {
+  return str
+    .replace(/<[^>]*>/g, "") // Strip HTML tags
+    .replace(/[<>]/g, "") // Remove any remaining angle brackets
+    .trim();
+}
+
 const router = Router();
 
 // POST /submit-concern — Submit a student concern
@@ -9,19 +17,31 @@ router.post("/", async (req: Request, res: Response) => {
     const { last, first, middle, studentNumber, section, institute, program, type, message } =
       req.body;
 
+    // Sanitize all string inputs
+    const sanitized = {
+      last: last ? sanitize(String(last)) : "",
+      first: first ? sanitize(String(first)) : "",
+      middle: middle ? sanitize(String(middle)) : "",
+      studentNumber: studentNumber ? sanitize(String(studentNumber)) : "",
+      section: section ? sanitize(String(section)) : "",
+      institute: institute ? sanitize(String(institute)) : "",
+      program: program ? sanitize(String(program)) : "",
+      type: type ? String(type).trim() : "",
+      message: message ? sanitize(String(message)) : "",
+    };
+
     // Validation
     const errors: string[] = [];
-    if (!last || typeof last !== "string") errors.push("last (name) is required");
-    if (!first || typeof first !== "string") errors.push("first (name) is required");
-    if (!studentNumber || typeof studentNumber !== "string")
-      errors.push("studentNumber is required");
-    if (!section || typeof section !== "string") errors.push("section is required");
-    if (!institute || typeof institute !== "string") errors.push("institute is required");
-    if (!program || typeof program !== "string") errors.push("program is required");
-    if (!type || !["Complaint", "Question", "Suggestion"].includes(type))
+    if (!sanitized.last) errors.push("last (name) is required");
+    if (!sanitized.first) errors.push("first (name) is required");
+    if (!sanitized.studentNumber) errors.push("studentNumber is required");
+    if (!sanitized.section) errors.push("section is required");
+    if (!sanitized.institute) errors.push("institute is required");
+    if (!sanitized.program) errors.push("program is required");
+    if (!["Complaint", "Question", "Suggestion"].includes(sanitized.type))
       errors.push("type must be 'Complaint', 'Question', or 'Suggestion'");
-    if (!message || typeof message !== "string") errors.push("message is required");
-    if (studentNumber && !/^\d+$/.test(studentNumber))
+    if (!sanitized.message) errors.push("message is required");
+    if (sanitized.studentNumber && !/^\d+$/.test(sanitized.studentNumber))
       errors.push("studentNumber must contain only digits");
 
     if (errors.length > 0) {
@@ -30,15 +50,15 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     const concern = await createConcern({
-      last_name: last,
-      first_name: first,
-      middle_name: middle || undefined,
-      student_number: studentNumber,
-      section,
-      institute,
-      program,
-      type,
-      message,
+      last_name: sanitized.last,
+      first_name: sanitized.first,
+      middle_name: sanitized.middle || undefined,
+      student_number: sanitized.studentNumber,
+      section: sanitized.section,
+      institute: sanitized.institute,
+      program: sanitized.program,
+      type: sanitized.type as "Complaint" | "Question" | "Suggestion",
+      message: sanitized.message,
     });
 
     res.status(201).json({

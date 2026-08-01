@@ -1,10 +1,29 @@
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import announcementsRouter from "./routes/announcements.js";
 import concernsRouter from "./routes/concerns.js";
+import adminRouter from "./routes/admin.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "8000", 10);
+
+// ── Rate Limiters ─────────────────────────────────────────────────
+const adminLoginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 attempts per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Try again later." },
+});
+
+const concernSubmitLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 submissions per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many submissions. Please slow down." },
+});
 
 // ── Middleware ──────────────────────────────────────────────────────
 app.use(cors());
@@ -17,7 +36,9 @@ app.get("/", (_req, res) => {
 
 // ── Routes ─────────────────────────────────────────────────────────
 app.use("/announcements", announcementsRouter);
-app.use("/submit-concern", concernsRouter);
+app.use("/submit-concern", concernSubmitLimiter, concernsRouter);
+app.use("/admin/login", adminLoginLimiter);
+app.use("/admin", adminRouter);
 
 // ── 404 Handler ────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -39,6 +60,7 @@ app.listen(PORT, () => {
 ║  Listening on :${String(PORT).padEnd(35)}║
 ║  Announcements : ${`http://localhost:${PORT}/announcements`.padEnd(32)}║
 ║  Submit Concern: ${`http://localhost:${PORT}/submit-concern`.padEnd(28)}║
+║  Admin          : ${`http://localhost:${PORT}/admin`.padEnd(31)}║
 ╚══════════════════════════════════════════════╝
   `);
 });

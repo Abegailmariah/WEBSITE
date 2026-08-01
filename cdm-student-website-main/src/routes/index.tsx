@@ -23,12 +23,12 @@ function Index() {
   return (
     <div className="min-h-[calc(100vh-64px)]">
       <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-        <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+        <div className="max-w-6xl mx-auto px-4 py-14 sm:py-20 text-center">
           <span className="inline-block bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-semibold mb-4">
             Colegio de Montalban
           </span>
-          <h1 className="text-4xl sm:text-5xl font-bold text-white">Welcome, CdM Student</h1>
-          <p className="mt-4 text-lg text-secondary/90 max-w-2xl mx-auto">
+          <h1 className="text-3xl sm:text-5xl font-bold text-white">Welcome, CdM Student</h1>
+          <p className="mt-4 text-base sm:text-lg text-secondary/90 max-w-2xl mx-auto">
             Stay updated with school announcements and submit concerns directly to your institute —
             all from one place.
           </p>

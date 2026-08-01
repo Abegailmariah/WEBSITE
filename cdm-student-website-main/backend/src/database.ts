@@ -152,10 +152,10 @@ export async function createAnnouncement(announcement: Announcement): Promise<An
     announcement.priority,
     announcement.content,
   ]);
+  const result = database.exec("SELECT last_insert_rowid() AS id");
   saveDatabase(database);
 
-  const result = database.exec("SELECT last_insert_rowid() as id");
-  const id = result[0].values[0][0] as number;
+  const id = result.length > 0 ? (result[0].values[0][0] as number) : 0;
   return { id, ...announcement };
 }
 
@@ -176,9 +176,99 @@ export async function createConcern(concern: Concern): Promise<Concern> {
       concern.message,
     ],
   );
+  const result = database.exec("SELECT last_insert_rowid() AS id");
   saveDatabase(database);
 
-  const result = database.exec("SELECT last_insert_rowid() as id");
-  const id = result[0].values[0][0] as number;
+  const id = result.length > 0 ? (result[0].values[0][0] as number) : 0;
   return { id, ...concern, status: "Pending" };
+}
+
+// ── Admin Query Helpers ────────────────────────────────────────────
+
+function rowsToObjects<T>(results: ReturnType<SqlJsDatabase["exec"]>): T[] {
+  if (results.length === 0) return [];
+  const columns = results[0].columns;
+  return results[0].values.map((row) => {
+    const obj: Record<string, unknown> = {};
+    columns.forEach((col, i) => {
+      obj[col] = row[i];
+    });
+    return obj as T;
+  });
+}
+
+export async function getAllConcerns(
+  page: number = 1,
+  limit: number = 50,
+): Promise<{ data: Concern[]; total: number; page: number; totalPages: number }> {
+  const database = await getDatabase();
+
+  // Get total count
+  const countResult = database.exec("SELECT COUNT(*) as cnt FROM concerns");
+  const total = countResult.length > 0 ? (countResult[0].values[0][0] as number) : 0;
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.max(1, Math.min(page, totalPages));
+  const offset = (safePage - 1) * limit;
+
+  const results = database.exec(
+    `SELECT * FROM concerns ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [limit, offset],
+  );
+
+  return {
+    data: rowsToObjects<Concern>(results),
+    total,
+    page: safePage,
+    totalPages,
+  };
+}
+
+export async function updateConcernStatus(
+  id: number,
+  status: "Pending" | "Read" | "Resolved",
+): Promise<Concern | null> {
+  const database = await getDatabase();
+  database.run("UPDATE concerns SET status = ? WHERE id = ?", [status, id]);
+  saveDatabase(database);
+
+  const results = database.exec("SELECT * FROM concerns WHERE id = ?", [id]);
+  const concerns = rowsToObjects<Concern>(results);
+  return concerns[0] ?? null;
+}
+
+export async function deleteAnnouncement(id: number): Promise<boolean> {
+  const database = await getDatabase();
+  database.run("DELETE FROM announcements WHERE id = ?", [id]);
+  saveDatabase(database);
+  return true;
+}
+
+export async function getStats(): Promise<{
+  announcements: number;
+  concerns: number;
+  pending: number;
+  read: number;
+  resolved: number;
+}> {
+  const database = await getDatabase();
+
+  const annResult = database.exec("SELECT COUNT(*) as cnt FROM announcements");
+  const concernsResult = database.exec("SELECT COUNT(*) as cnt FROM concerns");
+  const pendingResult = database.exec("SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Pending'");
+  const readResult = database.exec("SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Read'");
+  const resolvedResult = database.exec(
+    "SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Resolved'",
+  );
+
+  const count = (results: ReturnType<SqlJsDatabase["exec"]>): number =>
+    results.length > 0 ? (results[0].values[0][0] as number) : 0;
+
+  return {
+    announcements: count(annResult),
+    concerns: count(concernsResult),
+    pending: count(pendingResult),
+    read: count(readResult),
+    resolved: count(resolvedResult),
+  };
 }

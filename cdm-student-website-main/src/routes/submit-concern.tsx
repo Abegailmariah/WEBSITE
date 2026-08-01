@@ -107,7 +107,7 @@ function SubmitConcernPage() {
 
   const label = "block text-sm font-medium text-foreground mb-1";
   const input =
-    "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
+    "w-full rounded-md border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40";
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
@@ -198,10 +198,10 @@ function SubmitConcernPage() {
           <span className={label}>
             Type of Concern <span className="text-destructive">*</span>
           </span>
-          <div className="flex flex-wrap gap-4 mt-1">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
             {["Complaint", "Question", "Suggestion"].map((t) => (
-              <label key={t} className="inline-flex items-center gap-2 text-sm">
-                <input type="radio" required name="type" value={t} className="accent-primary" />
+              <label key={t} className="inline-flex items-center gap-2 text-sm py-1.5">
+                <input type="radio" required name="type" value={t} className="accent-primary w-4 h-4" />
                 {t}
               </label>
             ))}

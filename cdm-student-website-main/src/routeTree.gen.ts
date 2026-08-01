@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as SubmitConcernRouteImport } from './routes/submit-concern'
@@ -17,6 +18,11 @@ import { Route as SubmitConcernRouteImport } from './routes/submit-concern'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnnouncementsRoute = AnnouncementsRouteImport.update({
@@ -37,12 +43,14 @@ const SubmitConcernRoute = SubmitConcernRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
   '/submit-concern': typeof SubmitConcernRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
   '/submit-concern': typeof SubmitConcernRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
   '/submit-concern': typeof SubmitConcernRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/announcements' | '/contact' | '/submit-concern'
+  fullPaths: '/' | '/admin' | '/announcements' | '/contact' | '/submit-concern'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/announcements' | '/contact' | '/submit-concern'
-  id: '__root__' | '/' | '/announcements' | '/contact' | '/submit-concern'
+  to: '/' | '/admin' | '/announcements' | '/contact' | '/submit-concern'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/announcements'
+    | '/contact'
+    | '/submit-concern'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   ContactRoute: typeof ContactRoute
   SubmitConcernRoute: typeof SubmitConcernRoute
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/announcements': {
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   ContactRoute: ContactRoute,
   SubmitConcernRoute: SubmitConcernRoute,

@@ -5,6 +5,7 @@ const quickLinks = [
   { label: "Announcements", to: "/announcements" as const },
   { label: "Submit Concern", to: "/submit-concern" as const },
   { label: "Contact", to: "/contact" as const },
+  { label: "Admin", to: "/admin" as const },
 ];
 
 const contactInfo = [
@@ -91,7 +92,6 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-secondary/80">
           <span>© {new Date().getFullYear()} Colegio de Montalban. All rights reserved.</span>
-          <span>CdM Student Portal — Phase 2</span>
         </div>
       </div>
     </footer>
