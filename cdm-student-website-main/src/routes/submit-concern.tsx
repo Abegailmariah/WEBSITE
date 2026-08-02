@@ -155,7 +155,7 @@ function SubmitConcernPage() {
             <label className={label}>
               Student Number <span className="text-destructive">*</span>
             </label>
-            <input required name="studentNumber" className={input} placeholder="e.g. 23-00074" />
+            <input required name="studentNumber" className={input} placeholder="e.g. 24-00000" />
           </div>
           <div>
             <label className={label}>Year & Section</label>
