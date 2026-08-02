@@ -1,18 +1,9 @@
-import { Link } from "@tanstack/react-router";
-
-const quickLinks = [
-  { label: "Home", to: "/" as const },
-  { label: "Announcements", to: "/announcements" as const },
-  { label: "Submit Concern", to: "/submit-concern" as const },
-  { label: "Contact", to: "/contact" as const },
-];
-
 const contactInfo = [
   {
     label: "Address",
     value: "Colegio de Montalban, Kasiglahan Village, Rodriguez (Montalban), Rizal, Philippines",
   },
-{
+  {
     label: "Facebook",
     value: "Colegio de Montalban Official",
     link: "https://www.facebook.com/official.colegiodemontalban",
@@ -25,7 +16,7 @@ export function Footer() {
     <footer className="bg-primary text-primary-foreground">
       <div className="max-w-6xl mx-auto px-4 py-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* School info */}
-        <div className="sm:col-span-2 lg:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-secondary text-primary flex items-center justify-center font-bold">
               CdM
@@ -41,27 +32,8 @@ export function Footer() {
           </p>
         </div>
 
-        {/* Quick links */}
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
-            Quick Links
-          </h3>
-          <ul className="space-y-2">
-            {quickLinks.map((link) => (
-              <li key={link.to}>
-                <Link
-                  to={link.to}
-                  className="text-sm text-secondary/90 hover:text-white transition-colors"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         {/* Contact info */}
-        <div>
+        <div className="sm:col-span-1 lg:col-span-1">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
             Contact Us
           </h3>
@@ -96,3 +68,4 @@ export function Footer() {
     </footer>
   );
 }
+

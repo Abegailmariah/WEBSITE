@@ -12,7 +12,7 @@ export function Navbar() {
     { to: "/", label: "Home", exact: true },
     { to: "/announcements", label: "Announcements", exact: false },
     { to: "/submit-concern", label: "Submit Concern", exact: false },
-    { to: "/contact", label: "Contact", exact: false },
+    { to: "/contact", label: "About Us", exact: false },
   ];
 
   return (
