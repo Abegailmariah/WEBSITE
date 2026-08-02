@@ -247,23 +247,6 @@ export async function updateConcernStatus(
   return concerns[0] ?? null;
 }
 
-export async function getConcernById(id: number): Promise<Concern | null> {
-  const database = await getDatabase();
-  const results = database.exec("SELECT * FROM concerns WHERE id = ?", [id]);
-  const concerns = rowsToObjects<Concern>(results);
-  return concerns[0] ?? null;
-}
-
-export async function getConcernsByStudentNumber(
-  studentNumber: string,
-): Promise<Concern[]> {
-  const database = await getDatabase();
-  const results = database.exec("SELECT * FROM concerns WHERE student_number = ? ORDER BY created_at DESC", [
-    studentNumber,
-  ]);
-  return rowsToObjects<Concern>(results);
-}
-
 export async function deleteConcern(id: number): Promise<boolean> {
   const database = await getDatabase();
   database.run("DELETE FROM concerns WHERE id = ?", [id]);

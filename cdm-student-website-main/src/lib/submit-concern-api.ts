@@ -10,21 +10,6 @@ export type SubmitConcernPayload = {
   message: string;
 };
 
-export type TrackedConcern = {
-  id: number;
-  last_name: string;
-  first_name: string;
-  middle_name?: string;
-  student_number: string;
-  section: string;
-  institute: string;
-  program: string;
-  type: "Complaint" | "Question" | "Suggestion";
-  message: string;
-  status: "Pending" | "Read" | "Resolved";
-  created_at?: string;
-};
-
 const DEFAULT_ENDPOINT = "http://localhost:8000/submit-concern";
 
 export function getSubmitConcernEndpoint() {
@@ -71,53 +56,4 @@ export async function submitConcern(payload: SubmitConcernPayload) {
   }
 
   return res.json().catch(() => ({}));
-}
-
-// GET /submit-concern/:id — Track a single concern by reference ID
-export async function trackConcern(id: number): Promise<TrackedConcern> {
-  const endpoint = getSubmitConcernEndpoint();
-
-  const res = await fetch(`${endpoint}/${id}`, {
-    method: "GET",
-    headers: { accept: "application/json" },
-  });
-
-  if (!res.ok) {
-    let message = `Concern not found: HTTP ${res.status}`;
-    try {
-      const data = await res.json();
-      if (data?.error) message = data.error;
-    } catch {
-      // ignore
-    }
-    throw new Error(message);
-  }
-
-  return res.json() as Promise<TrackedConcern>;
-}
-
-// GET /submit-concern/student/:studentNumber — List all concerns for a student number
-export async function fetchMyConcerns(
-  studentNumber: string,
-): Promise<TrackedConcern[]> {
-  const endpoint = getSubmitConcernEndpoint();
-
-  const res = await fetch(`${endpoint}/student/${encodeURIComponent(studentNumber)}`, {
-    method: "GET",
-    headers: { accept: "application/json" },
-  });
-
-  if (!res.ok) {
-    let message = `Failed to load concerns: HTTP ${res.status}`;
-    try {
-      const data = await res.json();
-      if (data?.error) message = data.error;
-    } catch {
-      // ignore
-    }
-    throw new Error(message);
-  }
-
-  const data = (await res.json()) as { data: TrackedConcern[] };
-  return data.data ?? [];
 }

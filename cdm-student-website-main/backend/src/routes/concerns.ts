@@ -1,9 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import {
-  createConcern,
-  getConcernById,
-  getConcernsByStudentNumber,
-} from "../database.js";
+import { createConcern } from "../database.js";
 
 // Strip HTML tags and trim whitespace
 function sanitize(str: string): string {
@@ -72,58 +68,6 @@ router.post("/", async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("[Concerns] Failed to submit:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// GET /submit-concern/:id — Track a concern by its reference ID
-router.get("/:id", async (req: Request, res: Response) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
-      res.status(400).json({ error: "Invalid concern id" });
-      return;
-    }
-
-    const concern = await getConcernById(id);
-    if (!concern) {
-      res.status(404).json({ error: "Concern not found" });
-      return;
-    }
-
-    res.json({
-      id: concern.id,
-      last_name: concern.last_name,
-      first_name: concern.first_name,
-      middle_name: concern.middle_name ?? undefined,
-      student_number: concern.student_number,
-      section: concern.section,
-      institute: concern.institute,
-      program: concern.program,
-      type: concern.type,
-      message: concern.message,
-      status: concern.status,
-      created_at: concern.created_at,
-    });
-  } catch (err) {
-    console.error("[Concerns] Failed to fetch concern:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// GET /submit-concern/student/:studentNumber — List all concerns for a student number
-router.get("/student/:studentNumber", async (req: Request, res: Response) => {
-  try {
-    const studentNumber = String(req.params.studentNumber ?? "").trim();
-    if (!/^\d{2}-\d{5}$/.test(studentNumber)) {
-      res.status(400).json({ error: "studentNumber must match format YY-NNNNN (e.g., 24-00123)" });
-      return;
-    }
-
-    const concerns = await getConcernsByStudentNumber(studentNumber);
-    res.json({ data: concerns });
-  } catch (err) {
-    console.error("[Concerns] Failed to fetch student concerns:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
