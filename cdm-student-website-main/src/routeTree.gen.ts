@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as MyConcernsRouteImport } from './routes/my-concerns'
 import { Route as SubmitConcernRouteImport } from './routes/submit-concern'
+import { Route as TrackConcernRouteImport } from './routes/track-concern'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,9 +37,19 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyConcernsRoute = MyConcernsRouteImport.update({
+  id: '/my-concerns',
+  path: '/my-concerns',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubmitConcernRoute = SubmitConcernRouteImport.update({
   id: '/submit-concern',
   path: '/submit-concern',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackConcernRoute = TrackConcernRouteImport.update({
+  id: '/track-concern',
+  path: '/track-concern',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -46,14 +58,18 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/my-concerns': typeof MyConcernsRoute
   '/submit-concern': typeof SubmitConcernRoute
+  '/track-concern': typeof TrackConcernRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/my-concerns': typeof MyConcernsRoute
   '/submit-concern': typeof SubmitConcernRoute
+  '/track-concern': typeof TrackConcernRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,20 +77,38 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/my-concerns': typeof MyConcernsRoute
   '/submit-concern': typeof SubmitConcernRoute
+  '/track-concern': typeof TrackConcernRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/announcements' | '/contact' | '/submit-concern'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/announcements'
+    | '/contact'
+    | '/my-concerns'
+    | '/submit-concern'
+    | '/track-concern'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/announcements' | '/contact' | '/submit-concern'
+  to:
+    | '/'
+    | '/admin'
+    | '/announcements'
+    | '/contact'
+    | '/my-concerns'
+    | '/submit-concern'
+    | '/track-concern'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/announcements'
     | '/contact'
+    | '/my-concerns'
     | '/submit-concern'
+    | '/track-concern'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -82,7 +116,9 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   ContactRoute: typeof ContactRoute
+  MyConcernsRoute: typeof MyConcernsRoute
   SubmitConcernRoute: typeof SubmitConcernRoute
+  TrackConcernRoute: typeof TrackConcernRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -115,11 +151,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-concerns': {
+      id: '/my-concerns'
+      path: '/my-concerns'
+      fullPath: '/my-concerns'
+      preLoaderRoute: typeof MyConcernsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/submit-concern': {
       id: '/submit-concern'
       path: '/submit-concern'
       fullPath: '/submit-concern'
       preLoaderRoute: typeof SubmitConcernRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/track-concern': {
+      id: '/track-concern'
+      path: '/track-concern'
+      fullPath: '/track-concern'
+      preLoaderRoute: typeof TrackConcernRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -130,7 +180,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   ContactRoute: ContactRoute,
+  MyConcernsRoute: MyConcernsRoute,
   SubmitConcernRoute: SubmitConcernRoute,
+  TrackConcernRoute: TrackConcernRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

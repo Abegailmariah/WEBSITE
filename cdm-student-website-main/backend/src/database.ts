@@ -200,11 +200,21 @@ function rowsToObjects<T>(results: ReturnType<SqlJsDatabase["exec"]>): T[] {
 export async function getAllConcerns(
   page: number = 1,
   limit: number = 50,
+  search: string = "",
 ): Promise<{ data: Concern[]; total: number; page: number; totalPages: number }> {
   const database = await getDatabase();
 
+  const searchTerm = search.trim();
+  const searchWhere = searchTerm
+    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%')`
+    : "";
+  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm] : [];
+
   // Get total count
-  const countResult = database.exec("SELECT COUNT(*) as cnt FROM concerns");
+  const countResult = database.exec(
+    `SELECT COUNT(*) as cnt FROM concerns${searchWhere}`,
+    searchParams,
+  );
   const total = countResult.length > 0 ? (countResult[0].values[0][0] as number) : 0;
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -212,8 +222,8 @@ export async function getAllConcerns(
   const offset = (safePage - 1) * limit;
 
   const results = database.exec(
-    `SELECT * FROM concerns ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    [limit, offset],
+    `SELECT * FROM concerns${searchWhere} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [...searchParams, limit, offset],
   );
 
   return {
@@ -235,6 +245,46 @@ export async function updateConcernStatus(
   const results = database.exec("SELECT * FROM concerns WHERE id = ?", [id]);
   const concerns = rowsToObjects<Concern>(results);
   return concerns[0] ?? null;
+}
+
+export async function getConcernById(id: number): Promise<Concern | null> {
+  const database = await getDatabase();
+  const results = database.exec("SELECT * FROM concerns WHERE id = ?", [id]);
+  const concerns = rowsToObjects<Concern>(results);
+  return concerns[0] ?? null;
+}
+
+export async function getConcernsByStudentNumber(
+  studentNumber: string,
+): Promise<Concern[]> {
+  const database = await getDatabase();
+  const results = database.exec("SELECT * FROM concerns WHERE student_number = ? ORDER BY created_at DESC", [
+    studentNumber,
+  ]);
+  return rowsToObjects<Concern>(results);
+}
+
+export async function deleteConcern(id: number): Promise<boolean> {
+  const database = await getDatabase();
+  database.run("DELETE FROM concerns WHERE id = ?", [id]);
+  saveDatabase(database);
+  return true;
+}
+
+export async function updateAnnouncement(
+  id: number,
+  announcement: Pick<Announcement, "title" | "date" | "priority" | "content">,
+): Promise<Announcement | null> {
+  const database = await getDatabase();
+  database.run(
+    "UPDATE announcements SET title = ?, date = ?, priority = ?, content = ? WHERE id = ?",
+    [announcement.title, announcement.date, announcement.priority, announcement.content, id],
+  );
+  saveDatabase(database);
+
+  const results = database.exec("SELECT * FROM announcements WHERE id = ?", [id]);
+  const announcements = rowsToObjects<Announcement>(results);
+  return announcements[0] ?? null;
 }
 
 export async function deleteAnnouncement(id: number): Promise<boolean> {

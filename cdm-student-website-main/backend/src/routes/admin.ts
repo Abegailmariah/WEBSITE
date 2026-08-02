@@ -8,7 +8,9 @@ import {
 import {
   getAllConcerns,
   updateConcernStatus,
+  deleteConcern,
   deleteAnnouncement,
+  updateAnnouncement,
   getStats,
 } from "../database.js";
 
@@ -45,15 +47,33 @@ router.get("/stats", requireAuth, async (_req: Request, res: Response) => {
   }
 });
 
-// GET /admin/concerns — list all submitted concerns (with pagination)
+// GET /admin/concerns — list all submitted concerns (with pagination + optional search)
 router.get("/concerns", requireAuth, async (req: Request, res: Response) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
-    const result = await getAllConcerns(page, limit);
+    const search = typeof req.query.search === "string" ? req.query.search : "";
+    const result = await getAllConcerns(page, limit, search);
     res.json(result);
   } catch (err) {
     console.error("[Admin] Failed to fetch concerns:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /admin/concerns/:id — delete a concern
+router.delete("/concerns/:id", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: "Invalid concern id" });
+      return;
+    }
+
+    await deleteConcern(id);
+    res.json({ ok: true, id });
+  } catch (err) {
+    console.error("[Admin] Failed to delete concern:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -99,6 +119,42 @@ router.delete("/announcements/:id", requireAuth, async (req: Request, res: Respo
     res.json({ ok: true, id });
   } catch (err) {
     console.error("[Admin] Failed to delete announcement:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT /admin/announcements/:id — update an existing announcement
+router.put("/announcements/:id", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: "Invalid announcement id" });
+      return;
+    }
+
+    const { title, date, priority, content } = req.body ?? {};
+
+    const errors: string[] = [];
+    if (!title || typeof title !== "string") errors.push("title is required");
+    if (!date || typeof date !== "string") errors.push("date is required");
+    if (!priority || !["Critical", "Normal"].includes(priority))
+      errors.push("priority must be 'Critical' or 'Normal'");
+    if (!content || typeof content !== "string") errors.push("content is required");
+
+    if (errors.length > 0) {
+      res.status(400).json({ errors });
+      return;
+    }
+
+    const announcement = await updateAnnouncement(id, { title, date, priority, content });
+    if (!announcement) {
+      res.status(404).json({ error: "Announcement not found" });
+      return;
+    }
+
+    res.json(announcement);
+  } catch (err) {
+    console.error("[Admin] Failed to update announcement:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

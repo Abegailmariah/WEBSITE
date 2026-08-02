@@ -12,6 +12,8 @@ export function Navbar() {
     { to: "/", label: "Home", exact: true },
     { to: "/announcements", label: "Announcements", exact: false },
     { to: "/submit-concern", label: "Submit Concern", exact: false },
+    { to: "/track-concern", label: "Track Concern", exact: false },
+    { to: "/my-concerns", label: "My Concerns", exact: false },
     { to: "/contact", label: "Contact", exact: false },
   ];
 

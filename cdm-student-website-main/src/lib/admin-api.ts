@@ -21,6 +21,14 @@ export type AdminConcern = {
   created_at?: string;
 };
 
+export type AdminAnnouncement = {
+  id: number;
+  title: string;
+  date: string;
+  priority: "Critical" | "Normal";
+  content: string;
+};
+
 const DEFAULT_ADMIN_ENDPOINT = "http://localhost:8000/admin";
 
 export function getAdminEndpoint(): string {
@@ -104,9 +112,12 @@ export function fetchAdminStats(): Promise<AdminStats> {
 export function fetchAdminConcerns(
   page: number = 1,
   limit: number = 10,
+  search: string = "",
 ): Promise<{ data: AdminConcern[]; total: number; page: number; totalPages: number }> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.set("search", search);
   return request<{ data: AdminConcern[]; total: number; page: number; totalPages: number }>(
-    `/concerns?page=${page}&limit=${limit}`,
+    `/concerns?${params.toString()}`,
   );
 }
 
@@ -117,6 +128,27 @@ export function updateConcernStatus(
   return request<AdminConcern>(`/concerns/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export function deleteConcern(id: number): Promise<{ ok: boolean; id: number }> {
+  return request<{ ok: boolean; id: number }>(`/concerns/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function updateAnnouncement(
+  id: number,
+  announcement: {
+    title: string;
+    date: string;
+    priority: "Critical" | "Normal";
+    content: string;
+  },
+): Promise<AdminAnnouncement> {
+  return request<AdminAnnouncement>(`/announcements/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(announcement),
   });
 }
 

@@ -20,6 +20,8 @@ function AnnouncementsPage() {
   const modalRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [search, setSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<"All" | "Critical" | "Normal">("All");
 
   const {
     data: announcements = [],
@@ -122,6 +124,16 @@ function AnnouncementsPage() {
     );
   }
 
+  // Filter announcements by search + priority
+  const filtered = announcements.filter((a) => {
+    const matchesSearch =
+      !search ||
+      a.title.toLowerCase().includes(search.toLowerCase()) ||
+      a.content.toLowerCase().includes(search.toLowerCase());
+    const matchesPriority = priorityFilter === "All" || a.priority === priorityFilter;
+    return matchesSearch && matchesPriority;
+  });
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <header className="mb-8">
@@ -129,42 +141,79 @@ function AnnouncementsPage() {
         <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
       </header>
 
-      <div
-        className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-        aria-hidden={!!open}
-        role="region"
-        aria-label="All announcements list"
-      >
-        {announcements.map((a) => (
-          <article key={a.id} className="bg-card border rounded-lg p-5 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">{a.date}</span>
-              <span
-                className={
-                  "text-xs font-semibold px-2 py-0.5 rounded-full " +
-                  (a.priority === "Critical"
-                    ? "bg-destructive text-white"
-                    : "bg-secondary text-secondary-foreground")
-                }
-              >
-                {a.priority}
-              </span>
-            </div>
-            <h2 className="text-lg font-semibold text-foreground">{a.title}</h2>
-            <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">
-              {a.content}
-            </p>
+      {/* Search + priority filter */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-3">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search announcements..."
+          className="w-full sm:w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+        />
+        <div className="flex flex-wrap gap-2">
+          {(["All", "Critical", "Normal"] as const).map((p) => (
             <button
-              onClick={() => setOpen(a)}
-              className="mt-4 self-start text-primary font-medium hover:underline"
-              aria-expanded={open?.id === a.id}
-              aria-controls={`announcement-dialog-${a.id}`}
+              key={p}
+              onClick={() => setPriorityFilter(p)}
+              className={
+                "px-3 py-2 rounded-md text-xs font-medium transition-colors " +
+                (priorityFilter === p
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card border text-muted-foreground hover:text-foreground")
+              }
             >
-              Read more →
+              {p}
             </button>
-          </article>
-        ))}
+          ))}
+        </div>
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-lg border bg-card p-10 text-center">
+          <div className="text-4xl mb-3">📢</div>
+          <p className="text-lg font-medium text-foreground">No announcements match your search</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Try adjusting your search or filter.
+          </p>
+        </div>
+      ) : (
+        <div
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          aria-hidden={!!open}
+          role="region"
+          aria-label="All announcements list"
+        >
+          {filtered.map((a) => (
+            <article key={a.id} className="bg-card border rounded-lg p-5 shadow-sm flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">{a.date}</span>
+                <span
+                  className={
+                    "text-xs font-semibold px-2 py-0.5 rounded-full " +
+                    (a.priority === "Critical"
+                      ? "bg-destructive text-white"
+                      : "bg-secondary text-secondary-foreground")
+                  }
+                >
+                  {a.priority}
+                </span>
+              </div>
+              <h2 className="text-lg font-semibold text-foreground">{a.title}</h2>
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">
+                {a.content}
+              </p>
+              <button
+                onClick={() => setOpen(a)}
+                className="mt-4 self-start text-primary font-medium hover:underline"
+                aria-expanded={open?.id === a.id}
+                aria-controls={`announcement-dialog-${a.id}`}
+              >
+                Read more →
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
 
       {open && (
         <div

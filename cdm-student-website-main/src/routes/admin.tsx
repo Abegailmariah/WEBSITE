@@ -5,9 +5,11 @@ import {
   adminLogout,
   clearAdminToken,
   deleteAnnouncement,
+  deleteConcern,
   fetchAdminConcerns,
   fetchAdminStats,
   getAdminToken,
+  updateAnnouncement,
   updateConcernStatus,
   type AdminConcern,
   type AdminStats,
@@ -261,6 +263,7 @@ function AnnouncementsTab() {
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<Announcement | null>(null);
 
   const load = async () => {
     setError(null);
@@ -325,6 +328,17 @@ function AnnouncementsTab() {
 
       {showForm && <NewAnnouncementForm onCreated={(a) => { setItems((prev) => (prev ? [a, ...prev] : [a])); setShowForm(false); }} />}
 
+      {editing && (
+        <EditAnnouncementForm
+          announcement={editing}
+          onCancel={() => setEditing(null)}
+          onUpdated={(updated) => {
+            setItems((prev) => prev?.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)) ?? prev);
+            setEditing(null);
+          }}
+        />
+      )}
+
       {!items ? (
         <div className="bg-card border rounded-lg p-10 text-center text-muted-foreground text-sm">
           Loading announcements...
@@ -358,13 +372,22 @@ function AnnouncementsTab() {
                   {a.content}
                 </p>
               </div>
-              <button
-                onClick={() => handleDelete(a.id)}
-                disabled={busy}
-                className="text-xs text-destructive border border-destructive/30 rounded-md px-2.5 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50 whitespace-nowrap"
-              >
-                Delete
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => { setEditing(a); setShowForm(false); }}
+                  disabled={busy}
+                  className="text-xs text-primary border border-primary/30 rounded-md px-2.5 py-1.5 hover:bg-primary/10 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(a.id)}
+                  disabled={busy}
+                  className="text-xs text-destructive border border-destructive/30 rounded-md px-2.5 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -446,6 +469,95 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
   );
 }
 
+function EditAnnouncementForm({
+  announcement,
+  onCancel,
+  onUpdated,
+}: {
+  announcement: Announcement;
+  onCancel: () => void;
+  onUpdated: (updated: Announcement) => void;
+}) {
+  const [title, setTitle] = useState(announcement.title);
+  const [date, setDate] = useState(announcement.date);
+  const [priority, setPriority] = useState<"Critical" | "Normal">(announcement.priority);
+  const [content, setContent] = useState(announcement.content);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const input =
+    "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await updateAnnouncement(announcement.id, { title, date, priority, content });
+      onUpdated({ ...announcement, ...updated });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update announcement");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="bg-card border rounded-lg p-5 mb-6 grid gap-4 sm:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
+        <input required value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1">Date *</label>
+        <input required value={date} onChange={(e) => setDate(e.target.value)} className={input} placeholder="e.g. Nov 20, 2025" />
+      </div>
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-medium text-foreground mb-1">Priority</label>
+        <select value={priority} onChange={(e) => setPriority(e.target.value as "Critical" | "Normal")} className={input}>
+          <option value="Normal">Normal</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </div>
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-medium text-foreground mb-1">Content *</label>
+        <textarea
+          required
+          rows={4}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className={input}
+          placeholder="Write the announcement details..."
+        />
+      </div>
+
+      {error && (
+        <div className="sm:col-span-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <div className="sm:col-span-2 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={busy}
+          className="px-4 py-2 rounded-md text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={busy}
+          className="bg-primary text-primary-foreground px-5 py-2 rounded-md font-semibold hover:brightness-110 transition disabled:opacity-60"
+        >
+          {busy ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ── Concerns tab ───────────────────────────────────────────────────
 
 function ConcernsTab() {
@@ -454,12 +566,13 @@ function ConcernsTab() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"All" | "Pending" | "Read" | "Resolved">("All");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
   const limit = 10;
 
-  const load = async (p: number) => {
+  const load = async (p: number, q: string = search.trim()) => {
     setError(null);
     try {
-      const data = await fetchAdminConcerns(p, limit);
+      const data = await fetchAdminConcerns(p, limit, q);
       setResponse(data);
       setPage(data.page);
     } catch (err) {
@@ -491,6 +604,24 @@ function ConcernsTab() {
     }
   };
 
+  const handleDeleteConcern = async (id: number) => {
+    if (!window.confirm("Delete this concern permanently?")) return;
+    setBusyId(id);
+    setError(null);
+    try {
+      await deleteConcern(id);
+      setResponse((prev) =>
+        prev
+          ? { ...prev, data: prev.data.filter((c) => c.id !== id), total: Math.max(0, prev.total - 1) }
+          : prev,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete concern");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const filtered = response?.data.filter((c) => filter === "All" || c.status === filter) ?? [];
 
   // Reset to page 1 when filter changes
@@ -503,24 +634,47 @@ function ConcernsTab() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Concerns</h2>
-        <div className="flex flex-wrap gap-2">
-          {(["All", "Pending", "Read", "Resolved"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => handleFilterChange(f)}
-              className={
-                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors " +
-                (filter === f
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card border text-muted-foreground hover:text-foreground")
-              }
-            >
-              {f}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">Concerns</h2>
+          <div className="flex flex-wrap gap-2">
+            {(["All", "Pending", "Read", "Resolved"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                className={
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors " +
+                  (filter === f
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border text-muted-foreground hover:text-foreground")
+                }
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void load(1);
+          }}
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, student number, or message..."
+            className="w-full sm:w-72 rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <button
+            type="submit"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:brightness-110 transition"
+          >
+            Search
+          </button>
+        </form>
       </div>
 
       {error && (
@@ -586,6 +740,13 @@ function ConcernsTab() {
                     {s}
                   </button>
                 ))}
+                <button
+                  onClick={() => handleDeleteConcern(c.id)}
+                  disabled={busyId === c.id}
+                  className="ml-auto text-xs text-destructive border border-destructive/30 rounded-md px-2.5 py-1.5 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}
