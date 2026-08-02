@@ -77,9 +77,9 @@ function SubmitConcernPage() {
       return;
     }
 
-    // Validate student number is numeric
-    if (!/^\d+$/.test(payloadDraft.studentNumber)) {
-      setErrorMessage("Student number must contain only numbers.");
+    // Validate student number format (digits with optional dashes, e.g. 23-00074)
+    if (!/^[\d-]+$/.test(payloadDraft.studentNumber)) {
+      setErrorMessage("Student number must be numbers with optional dashes (e.g., 23-00074).");
       setSubmitting(false);
       return;
     }
@@ -155,7 +155,7 @@ function SubmitConcernPage() {
             <label className={label}>
               Student Number <span className="text-destructive">*</span>
             </label>
-            <input required name="studentNumber" className={input} placeholder="20xx-xxxxx" />
+            <input required name="studentNumber" className={input} placeholder="e.g. 23-00074" />
           </div>
           <div>
             <label className={label}>Year & Section</label>
