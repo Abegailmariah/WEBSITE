@@ -77,9 +77,9 @@ function SubmitConcernPage() {
       return;
     }
 
-    // Validate student number format (digits with optional dashes, e.g. 23-00074)
-    if (!/^[\d-]+$/.test(payloadDraft.studentNumber)) {
-      setErrorMessage("Student number must be numbers with optional dashes (e.g., 23-00074).");
+    // Validate student number format (YY-NNNNN, e.g. 24-00123)
+    if (!/^\d{2}-\d{5}$/.test(payloadDraft.studentNumber)) {
+      setErrorMessage("Student number must match format YY-NNNNN (e.g., 24-00123).");
       setSubmitting(false);
       return;
     }

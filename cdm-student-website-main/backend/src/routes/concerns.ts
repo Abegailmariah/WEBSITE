@@ -41,8 +41,8 @@ router.post("/", async (req: Request, res: Response) => {
     if (!["Complaint", "Question", "Suggestion"].includes(sanitized.type))
       errors.push("type must be 'Complaint', 'Question', or 'Suggestion'");
     if (!sanitized.message) errors.push("message is required");
-    if (sanitized.studentNumber && !/^[\d-]+$/.test(sanitized.studentNumber))
-      errors.push("studentNumber must contain only digits and dashes (e.g., 23-00074)");
+    if (sanitized.studentNumber && !/^\d{2}-\d{5}$/.test(sanitized.studentNumber))
+      errors.push("studentNumber must match format YY-NNNNN (e.g., 24-00123)");
 
     if (errors.length > 0) {
       res.status(400).json({ errors });
