@@ -21,5 +21,5 @@
 - [x] Frontend `tsc --noEmit` passes
 - [x] End-to-end Node test script (`backend/test-features.mjs`): 12/12 PASS — track, my-concerns, admin edit/delete/search
 - [x] `npm run build` (backend) passes
-- [ ] Commit + push to `origin/main`
+- [x] Commit + push to `origin/main` (`97a7b25..98aabe7`)
 
