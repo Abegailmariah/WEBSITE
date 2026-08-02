@@ -1,5 +1,4 @@
 import initSqlJs, { type Database as SqlJsDatabase } from "sql.js";
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,18 +8,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.resolve(__dirname, "..", "cdm_portal.db");
 
 let db: SqlJsDatabase | null = null;
-
-// ── Tracking code helpers ──────────────────────────────────────────
-const TRACKING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
-
-export function generateTrackingCode(): string {
-  const bytes = crypto.randomBytes(6);
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += TRACKING_ALPHABET[bytes[i] % TRACKING_ALPHABET.length];
-  }
-  return `CDM-${code}`;
-}
 
 // ── Database lifecycle ─────────────────────────────────────────────
 
@@ -40,7 +27,6 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
   db.run("PRAGMA foreign_keys = ON");
   initializeSchema(db);
   runMigrations(db);
-  backfillTrackingCodes(db);
   seedIfEmpty(db);
   saveDatabase(db);
 
@@ -126,35 +112,6 @@ function runMigrations(database: SqlJsDatabase): void {
   if (!existing.includes("response")) {
     database.run("ALTER TABLE concerns ADD COLUMN response TEXT");
   }
-  if (!existing.includes("tracking_code")) {
-    database.run("ALTER TABLE concerns ADD COLUMN tracking_code TEXT");
-  }
-}
-
-// Ensure every concern has a tracking code (for rows created before this feature).
-function backfillTrackingCodes(database: SqlJsDatabase): void {
-  const results = database.exec("SELECT id FROM concerns WHERE tracking_code IS NULL OR tracking_code = ''");
-  if (results.length === 0 || results[0].values.length === 0) return;
-
-  const used = new Set<string>();
-  const existingResults = database.exec("SELECT tracking_code FROM concerns WHERE tracking_code IS NOT NULL");
-  if (existingResults.length > 0) {
-    for (const row of existingResults[0].values) used.add(String(row[0]));
-  }
-
-  const stmt = database.prepare("UPDATE concerns SET tracking_code = ? WHERE id = ?");
-  for (const row of results[0].values) {
-    const id = row[0] as number;
-    let code = generateTrackingCode();
-    while (used.has(code)) code = generateTrackingCode();
-    used.add(code);
-    stmt.bind([code, id]);
-    stmt.run();
-    stmt.reset();
-  }
-  stmt.free();
-  saveDatabase(database);
-  console.log(`[DB] Backfilled tracking codes for concerns.`);
 }
 
 function seedIfEmpty(database: SqlJsDatabase): void {
@@ -290,11 +247,10 @@ export async function createAnnouncement(announcement: Announcement): Promise<An
 
 export async function createConcern(concern: Concern): Promise<Concern> {
   const database = await getDatabase();
-  const trackingCode = generateTrackingCode();
 
   database.run(
-    `INSERT INTO concerns (last_name, first_name, middle_name, student_number, section, institute, program, type, message, email, response, tracking_code)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO concerns (last_name, first_name, middle_name, student_number, section, institute, program, type, message, response)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       concern.last_name,
       concern.first_name,
@@ -305,31 +261,14 @@ export async function createConcern(concern: Concern): Promise<Concern> {
       concern.program,
       concern.type,
       concern.message,
-      concern.email ?? null,
       null,
-      trackingCode,
     ],
   );
   const result = database.exec("SELECT last_insert_rowid() AS id");
   saveDatabase(database);
 
   const id = result.length > 0 ? (result[0].values[0][0] as number) : 0;
-  return { id, ...concern, status: "Pending", tracking_code: trackingCode };
-}
-
-// Public lookup: returns only non-sensitive info for tracking.
-export async function getConcernByTrackingCode(
-  code: string,
-): Promise<Pick<Concern, "status" | "response" | "type" | "created_at"> | null> {
-  const database = await getDatabase();
-  const results = database.exec(
-    "SELECT status, response, type, created_at FROM concerns WHERE tracking_code = ?",
-    [code.trim().toUpperCase()],
-  );
-  const rows = rowsToObjects<Concern>(results);
-  if (rows.length === 0) return null;
-  const row = rows[0];
-  return { status: row.status, response: row.response, type: row.type, created_at: row.created_at };
+  return { id, ...concern, status: "Pending" };
 }
 
 // Admin list with pagination + optional search.
@@ -342,9 +281,9 @@ export async function getAllConcerns(
 
   const searchTerm = search.trim();
   const searchWhere = searchTerm
-    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%' OR tracking_code LIKE '%' || ? || '%')`
+    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%')`
     : "";
-  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm] : [];
+  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm] : [];
 
   // Get total count
   const countResult = database.exec(
@@ -375,9 +314,9 @@ export async function getAllConcernsRaw(search: string = ""): Promise<Concern[]>
   const database = await getDatabase();
   const searchTerm = search.trim();
   const searchWhere = searchTerm
-    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%' OR tracking_code LIKE '%' || ? || '%')`
+    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%')`
     : "";
-  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm] : [];
+  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm] : [];
 
   const results = database.exec(
     `SELECT * FROM concerns${searchWhere} ORDER BY created_at DESC, id DESC`,
@@ -490,4 +429,3 @@ export async function getAuditLog(limit: number = 50): Promise<AuditLog[]> {
   );
   return rowsToObjects<AuditLog>(results);
 }
-

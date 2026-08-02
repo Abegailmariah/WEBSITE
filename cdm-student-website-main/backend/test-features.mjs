@@ -32,8 +32,6 @@ const created = await req("/submit-concern", {
 });
 check("POST valid concern", created.status === 201, `status=${created.status} body=${JSON.stringify(created.body)}`);
 const id = created.body?.id;
-const trackingCode = created.body?.tracking_code;
-check("POST returns tracking code", !!trackingCode, `tracking_code=${trackingCode}`);
 
 // 1b. POST without consent is rejected
 const noConsent = await req("/submit-concern", {
@@ -50,16 +48,6 @@ const noConsent = await req("/submit-concern", {
   }),
 });
 check("POST rejected without consent", noConsent.status === 400, `status=${noConsent.status}`);
-
-// 1c. Public tracking lookup
-if (trackingCode) {
-  const track = await req(`/track/${trackingCode}`);
-  check(
-    "Track concern by code",
-    track.status === 200 && track.body?.status === "Pending",
-    `status=${track.status} body=${JSON.stringify(track.body)}`,
-  );
-}
 
 // 2. POST with invalid student number
 const bad = await req("/submit-concern", {
@@ -103,8 +91,8 @@ if (token) {
   const csvText = await csv.text();
   check(
     "Admin CSV export",
-    csv.status === 200 && csvText.includes("tracking_code"),
-    `status=${csv.status} hasHeader=${csvText.includes("tracking_code")}`,
+    csv.status === 200 && csvText.includes("last_name"),
+    `status=${csv.status} hasHeader=${csvText.includes("last_name")}`,
   );
 
   // 4c. Audit log
@@ -156,16 +144,6 @@ if (token) {
       body: JSON.stringify({ status: "Resolved", response: "Thanks for your feedback!" }),
     });
     check("Admin update concern response", updResp.status === 200 && updResp.body?.response === "Thanks for your feedback!", `status=${updResp.status}`);
-  }
-
-  // 6c. Student sees the response via tracking
-  if (trackingCode) {
-    const track2 = await req(`/track/${trackingCode}`);
-    check(
-      "Track shows response",
-      track2.status === 200 && track2.body?.status === "Resolved" && track2.body?.response,
-      `body=${JSON.stringify(track2.body)}`,
-    );
   }
 
   // 7. Admin delete concern

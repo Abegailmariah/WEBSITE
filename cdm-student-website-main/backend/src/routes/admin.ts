@@ -100,17 +100,17 @@ router.get("/concerns/export", requireAuth, async (req: Request, res: Response) 
       return s;
     };
 
-    const header = [
-      "id", "tracking_code", "last_name", "first_name", "middle_name",
+const header = [
+      "id", "last_name", "first_name", "middle_name",
       "student_number", "section", "institute", "program", "type",
-      "status", "email", "message", "response", "created_at",
+      "status", "message", "response", "created_at",
     ].join(",");
 
     const rows = concerns.map((c) =>
       [
-        c.id, c.tracking_code, c.last_name, c.first_name, c.middle_name,
+        c.id, c.last_name, c.first_name, c.middle_name,
         c.student_number, c.section, c.institute, c.program, c.type,
-        c.status, c.email, c.message, c.response, c.created_at,
+        c.status, c.message, c.response, c.created_at,
       ]
         .map(escapeCsv)
         .join(","),

@@ -18,10 +18,8 @@ export interface Concern {
   program: string;
   type: "Complaint" | "Question" | "Suggestion";
   message: string;
-  email?: string;
   status?: "Pending" | "Read" | "Resolved";
   response?: string;
-  tracking_code?: string;
   created_at?: string;
 }
 
@@ -31,4 +29,3 @@ export interface AuditLog {
   detail?: string;
   created_at?: string;
 }
-

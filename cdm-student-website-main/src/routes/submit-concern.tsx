@@ -45,7 +45,6 @@ function SubmitConcernPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [messageLength, setMessageLength] = useState(0);
   const [consent, setConsent] = useState(false);
-  const [trackingCode, setTrackingCode] = useState<string | null>(null);
   const MAX_MESSAGE_LENGTH = 2000;
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -73,7 +72,6 @@ function SubmitConcernPage() {
       program: String(fd.get("program") ?? "").trim(),
       type: String(fd.get("type") ?? "").trim() as SubmitConcernPayload["type"],
       message: String(fd.get("message") ?? "").trim(),
-      email: String(fd.get("email") ?? "").trim() || undefined,
       consent,
     };
 
@@ -94,19 +92,11 @@ function SubmitConcernPage() {
       return;
     }
 
-    // Validate email if provided
-    if (payloadDraft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payloadDraft.email)) {
-      setErrorMessage("Please enter a valid email address.");
-      setSubmitting(false);
-      return;
-    }
-
     const payload: SubmitConcernPayload = payloadDraft;
 
     try {
       const result = await submitConcern(payload);
       setSubmitted(true);
-      setTrackingCode(result.tracking_code ?? null);
       toast.success("Concern submitted!", {
         description: "Thank you! Your concern has been recorded.",
       });
@@ -141,13 +131,6 @@ function SubmitConcernPage() {
       {submitted && (
         <div className="mb-6 rounded-md border border-secondary bg-secondary/30 px-4 py-3 text-sm text-secondary-foreground">
           <p className="font-semibold">Thank you! Your concern has been recorded.</p>
-          {trackingCode && (
-            <p className="mt-1">
-              Your tracking code is{" "}
-              <code className="bg-muted px-1.5 py-0.5 rounded font-bold">{trackingCode}</code>. Keep
-              this to check the status of your concern.
-            </p>
-          )}
         </div>
       )}
 
@@ -236,11 +219,6 @@ function SubmitConcernPage() {
         </div>
 
         <div>
-          <label className={label}>Email (optional — for updates on your concern)</label>
-          <input type="email" name="email" className={input} placeholder="you@example.com" maxLength={120} />
-        </div>
-
-        <div>
           <label className={label}>Message</label>
           <textarea
             required
@@ -298,4 +276,3 @@ function SubmitConcernPage() {
     </div>
   );
 }
-

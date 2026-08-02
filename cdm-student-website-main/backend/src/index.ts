@@ -4,7 +4,6 @@ import rateLimit from "express-rate-limit";
 import announcementsRouter from "./routes/announcements.js";
 import concernsRouter from "./routes/concerns.js";
 import adminRouter from "./routes/admin.js";
-import trackRouter from "./routes/track.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "8000", 10);
@@ -74,7 +73,6 @@ app.get("/", (_req, res) => {
 // ── Routes ─────────────────────────────────────────────────────────
 app.use("/announcements", announcementsRouter);
 app.use("/submit-concern", concernSubmitLimiter, concernsRouter);
-app.use("/track", trackRouter);
 app.use("/admin/login", adminLoginLimiter);
 app.use("/admin", adminMutationLimiter, adminRouter);
 
@@ -103,7 +101,6 @@ app.listen(PORT, () => {
 ║  Listening on :${String(PORT).padEnd(35)}║
 ║  Announcements : ${`http://localhost:${PORT}/announcements`.padEnd(32)}║
 ║  Submit Concern: ${`http://localhost:${PORT}/submit-concern`.padEnd(28)}║
-║  Track          : ${`http://localhost:${PORT}/track/:code`.padEnd(29)}║
 ║  Admin          : ${`http://localhost:${PORT}/admin`.padEnd(31)}║
 ╚══════════════════════════════════════════════╝
   `);

@@ -1,6 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
-import { trackConcern, type TrackedConcern } from "@/lib/submit-concern-api";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -46,92 +44,6 @@ const offices = [
   { office: "Guidance & Counseling", contact: "guidance@cdm.edu.ph", hours: "Mon–Fri, 8AM–5PM" },
 ];
 
-function TrackConcernWidget() {
-  const [code, setCode] = useState("");
-  const [result, setResult] = useState<TrackedConcern | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    setResult(null);
-    try {
-      const data = await trackConcern(code);
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Tracking lookup failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const statusStyles: Record<string, string> = {
-    Pending: "bg-amber-100 text-amber-700",
-    Read: "bg-blue-100 text-blue-700",
-    Resolved: "bg-emerald-100 text-emerald-700",
-  };
-
-  return (
-    <section className="bg-card border rounded-lg shadow-sm p-6 mb-10">
-      <h2 className="text-xl font-bold text-foreground mb-1">Track a Concern</h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        Enter the tracking code you received after submitting a concern (e.g., CDM-ABC123).
-      </p>
-
-      <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md">
-        <input
-          type="text"
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="CDM-XXXXXX"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          required
-        />
-        <button
-          type="submit"
-          disabled={busy}
-          className="bg-primary text-primary-foreground px-5 py-2 rounded-md font-semibold hover:brightness-110 transition disabled:opacity-60 whitespace-nowrap"
-        >
-          {busy ? "Checking..." : "Track"}
-        </button>
-      </form>
-
-      {error && (
-        <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive max-w-md">
-          {error}
-        </div>
-      )}
-
-      {result && (
-        <div className="mt-4 rounded-md border border-border bg-muted/40 p-4 max-w-md">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{result.tracking_code}</span>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusStyles[result.status] ?? ""}`}>
-              {result.status}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Type: {result.type}
-            {result.created_at ? ` • Submitted: ${result.created_at}` : ""}
-          </p>
-          {result.response ? (
-            <div className="mt-3 border-t border-border pt-3">
-              <p className="text-xs font-semibold text-foreground">Response from the school:</p>
-              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{result.response}</p>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground mt-3">
-              No response yet. We'll update your concern as soon as it's addressed.
-            </p>
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
 function ContactPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -145,9 +57,6 @@ function ContactPage() {
           You can also submit your concerns directly through the portal.
         </p>
       </header>
-
-      {/* Track a concern */}
-      <TrackConcernWidget />
 
       {/* Contact cards */}
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
@@ -233,4 +142,3 @@ function ContactPage() {
     </div>
   );
 }
-

@@ -755,7 +755,7 @@ function ConcernsTab() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, student number, tracking code, or message..."
+            placeholder="Search by name, student number, or message..."
             className="w-full sm:w-80 rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
           <button
@@ -794,12 +794,7 @@ function ConcernsTab() {
                     {c.student_number} • {c.section} • {c.program}
                   </p>
                   <p className="text-xs text-muted-foreground">{c.institute}</p>
-                  {c.tracking_code && (
-                    <p className="text-xs text-muted-foreground">
-                      Tracking: <code className="bg-muted px-1 py-0.5 rounded">{c.tracking_code}</code>
-                    </p>
-                  )}
-                  {c.email && <p className="text-xs text-muted-foreground">Email: {c.email}</p>}
+
                 </div>
                 <div className="flex items-center gap-2">
                   <span

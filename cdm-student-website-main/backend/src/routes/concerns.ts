@@ -17,7 +17,7 @@ const router = Router();
 // POST /submit-concern — Submit a student concern
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { last, first, middle, studentNumber, section, institute, program, type, message, email, consent } =
+    const { last, first, middle, studentNumber, section, institute, program, type, message, consent } =
       req.body;
 
     // Sanitize all string inputs
@@ -31,7 +31,6 @@ router.post("/", async (req: Request, res: Response) => {
       program: program ? sanitize(String(program)) : "",
       type: type ? String(type).trim() : "",
       message: message ? sanitize(String(message)) : "",
-      email: email ? sanitize(String(email)) : "",
     };
 
     // Validation
@@ -57,11 +56,6 @@ router.post("/", async (req: Request, res: Response) => {
       }
     }
 
-    // Email format check (optional field)
-    if (sanitized.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitized.email)) {
-      errors.push("email must be a valid email address");
-    }
-
     // Data Privacy Act (RA 10173) consent
     if (consent !== true) {
       errors.push("consent is required to process your personal information");
@@ -82,14 +76,12 @@ router.post("/", async (req: Request, res: Response) => {
       program: sanitized.program,
       type: sanitized.type as "Complaint" | "Question" | "Suggestion",
       message: sanitized.message,
-      email: sanitized.email || undefined,
     });
 
     res.status(201).json({
       message: "Concern submitted successfully",
       id: concern.id,
       status: concern.status,
-      tracking_code: concern.tracking_code,
     });
   } catch (err) {
     console.error("[Concerns] Failed to submit:", err);
@@ -98,4 +90,3 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 export default router;
-
