@@ -22,6 +22,7 @@ function AnnouncementsPage() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"All" | "Critical" | "Normal">("All");
+  const [sort, setSort] = useState<"newest" | "oldest">("newest");
 
   const {
     data: announcements = [],
@@ -30,8 +31,8 @@ function AnnouncementsPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["announcements"],
-    queryFn: fetchAnnouncements,
+    queryKey: ["announcements", sort],
+    queryFn: () => fetchAnnouncements(sort),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
   });
@@ -165,6 +166,13 @@ function AnnouncementsPage() {
               {p}
             </button>
           ))}
+          <button
+            onClick={() => setSort((s) => (s === "newest" ? "oldest" : "newest"))}
+            className="px-3 py-2 rounded-md text-xs font-medium transition-colors bg-card border text-muted-foreground hover:text-foreground"
+            title="Toggle sort order"
+          >
+            {sort === "newest" ? "Newest first" : "Oldest first"} ↑↓
+          </button>
         </div>
       </div>
 
@@ -217,7 +225,7 @@ function AnnouncementsPage() {
 
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto"
           onClick={() => setOpen(null)}
           onKeyDown={handleModalKeyDown}
           role="dialog"
@@ -227,7 +235,7 @@ function AnnouncementsPage() {
         >
           <div
             ref={modalRef}
-            className="bg-card rounded-lg max-w-lg w-full p-6 shadow-xl"
+            className="bg-card rounded-lg max-w-lg w-full p-6 shadow-xl my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-2">

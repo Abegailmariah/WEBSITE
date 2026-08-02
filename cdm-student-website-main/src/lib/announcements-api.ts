@@ -13,6 +13,13 @@ export type NewAnnouncement = {
   content: string;
 };
 
+export type AnnouncementsResponse = {
+  data: Announcement[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
 const DEFAULT_ANNOUNCEMENTS_ENDPOINT = "http://localhost:8000/announcements";
 
 export function getAnnouncementsEndpoint(): string {
@@ -72,11 +79,13 @@ const fallbackAnnouncements: Announcement[] = [
   },
 ];
 
-export async function fetchAnnouncements(): Promise<Announcement[]> {
+export async function fetchAnnouncements(sort: "newest" | "oldest" = "newest"): Promise<Announcement[]> {
   const endpoint = getAnnouncementsEndpoint();
+  const params = new URLSearchParams({ sort });
+  const url = `${endpoint}?${params.toString()}`;
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetch(url, {
       method: "GET",
       headers: { accept: "application/json" },
       // Timeout after 5s so the UI doesn't hang
@@ -88,12 +97,37 @@ export async function fetchAnnouncements(): Promise<Announcement[]> {
       return fallbackAnnouncements;
     }
 
-    const data: Announcement[] = await res.json();
-    return data;
+    const data = await res.json();
+    // Backward-compatible: array or { data, total, page, totalPages }
+    if (Array.isArray(data)) return data as Announcement[];
+    if (data && Array.isArray(data.data)) return data.data as Announcement[];
+    return fallbackAnnouncements;
   } catch (err) {
     console.warn("Failed to fetch announcements from backend. Falling back to mock data.", err);
     return fallbackAnnouncements;
   }
+}
+
+// Paginated + sortable fetch for the admin dashboard.
+export async function fetchAnnouncementsPage(
+  page: number = 1,
+  limit: number = 10,
+  sort: "newest" | "oldest" = "newest",
+): Promise<AnnouncementsResponse> {
+  const endpoint = getAnnouncementsEndpoint();
+  const params = new URLSearchParams({ page: String(page), limit: String(limit), sort });
+
+  const res = await fetch(`${endpoint}?${params.toString()}`, {
+    method: "GET",
+    headers: { accept: "application/json" },
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch announcements: HTTP ${res.status}`);
+  }
+
+  return res.json() as Promise<AnnouncementsResponse>;
 }
 
 export async function createAnnouncement(
@@ -103,6 +137,7 @@ export async function createAnnouncement(
 
   const res = await fetch(endpoint, {
     method: "POST",
+    credentials: "include",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(announcement),
   });
@@ -119,3 +154,4 @@ export async function createAnnouncement(
 
   return res.json() as Promise<Announcement>;
 }
+

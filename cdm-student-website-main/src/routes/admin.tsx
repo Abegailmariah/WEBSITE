@@ -3,21 +3,25 @@ import { useState, type FormEvent } from "react";
 import {
   adminLogin,
   adminLogout,
-  clearAdminToken,
+  checkAdminSession,
   deleteAnnouncement,
   deleteConcern,
+  downloadConcernsCsv,
   fetchAdminConcerns,
   fetchAdminStats,
-  getAdminToken,
+  fetchAuditLog,
   updateAnnouncement,
   updateConcernStatus,
+  updateConcernWithResponse,
   type AdminConcern,
   type AdminStats,
+  type AuditLogEntry,
 } from "@/lib/admin-api";
 import {
   createAnnouncement,
-  fetchAnnouncements,
+  fetchAnnouncementsPage,
   type Announcement,
+  type AnnouncementsResponse,
 } from "@/lib/announcements-api";
 
 export const Route = createFileRoute("/admin")({
@@ -31,8 +35,23 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const [authed, setAuthed] = useState<boolean>(() => typeof window !== "undefined" && !!getAdminToken());
-  const [tab, setTab] = useState<"overview" | "announcements" | "concerns">("overview");
+  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [tab, setTab] = useState<"overview" | "announcements" | "concerns" | "audit">("overview");
+
+  // Check session on mount (httpOnly cookie)
+  const [checked, setChecked] = useState(false);
+  if (!checked) {
+    setChecked(true);
+    void checkAdminSession().then(setAuthed).catch(() => setAuthed(false));
+  }
+
+  if (authed === null) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <div className="text-muted-foreground text-sm">Checking session...</div>
+      </div>
+    );
+  }
 
   if (!authed) {
     return <LoginScreen onSuccess={() => setAuthed(true)} />;
@@ -71,7 +90,7 @@ function AdminPage() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {(["overview", "announcements", "concerns"] as const).map((t) => (
+        {(["overview", "announcements", "concerns", "audit"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -90,6 +109,7 @@ function AdminPage() {
       {tab === "overview" && <OverviewTab />}
       {tab === "announcements" && <AnnouncementsTab />}
       {tab === "concerns" && <ConcernsTab />}
+      {tab === "audit" && <AuditTab />}
     </div>
   );
 }
@@ -184,7 +204,6 @@ function OverviewTab() {
     }
   };
 
-  // Load on mount
   const [loaded, setLoaded] = useState(false);
   if (!loaded) {
     setLoaded(true);
@@ -258,27 +277,30 @@ function OverviewTab() {
 // ── Announcements tab ──────────────────────────────────────────────
 
 function AnnouncementsTab() {
-  const [items, setItems] = useState<Announcement[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [response, setResponse] = useState<AnnouncementsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Announcement | null>(null);
+  const limit = 10;
 
-  const load = async () => {
+  const load = async (p: number) => {
     setError(null);
     try {
-      const data = await fetchAnnouncements();
-      setItems(data);
+      const data = await fetchAnnouncementsPage(p, limit);
+      setResponse(data);
+      setPage(data.page);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load announcements");
     }
   };
 
   const [loaded, setLoaded] = useState(false);
-  if (!loaded && !items) {
+  if (!loaded && !response) {
     setLoaded(true);
-    void load();
+    void load(1);
   }
 
   const handleDelete = async (id: number) => {
@@ -287,7 +309,9 @@ function AnnouncementsTab() {
     setError(null);
     try {
       await deleteAnnouncement(id);
-      setItems((prev) => prev?.filter((a) => a.id !== id) ?? prev);
+      setResponse((prev) =>
+        prev ? { ...prev, data: prev.data.filter((a) => a.id !== id), total: Math.max(0, prev.total - 1) } : prev,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete announcement");
     } finally {
@@ -295,9 +319,11 @@ function AnnouncementsTab() {
     }
   };
 
-  const filtered = items?.filter((a) =>
+  const filtered = response?.data.filter((a) =>
     a.title.toLowerCase().includes(search.toLowerCase()),
   ) ?? [];
+
+  const items = response?.data ?? [];
 
   return (
     <div>
@@ -326,20 +352,31 @@ function AnnouncementsTab() {
         </div>
       )}
 
-      {showForm && <NewAnnouncementForm onCreated={(a) => { setItems((prev) => (prev ? [a, ...prev] : [a])); setShowForm(false); }} />}
+      {showForm && (
+        <NewAnnouncementForm
+          onCreated={(a) => {
+            setResponse((prev) => (prev ? { ...prev, data: [a, ...prev.data], total: prev.total + 1 } : prev));
+            setShowForm(false);
+          }}
+        />
+      )}
 
       {editing && (
         <EditAnnouncementForm
           announcement={editing}
           onCancel={() => setEditing(null)}
           onUpdated={(updated) => {
-            setItems((prev) => prev?.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)) ?? prev);
+            setResponse((prev) =>
+              prev
+                ? { ...prev, data: prev.data.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)) }
+                : prev,
+            );
             setEditing(null);
           }}
         />
       )}
 
-      {!items ? (
+      {!response ? (
         <div className="bg-card border rounded-lg p-10 text-center text-muted-foreground text-sm">
           Loading announcements...
         </div>
@@ -390,6 +427,29 @@ function AnnouncementsTab() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination controls */}
+      {response && response.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            onClick={() => load(page - 1)}
+            disabled={page <= 1}
+            className="px-4 py-2 rounded-md text-sm font-medium border border-border bg-card text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
+          <span className="text-sm text-muted-foreground">
+            Page {response.page} of {response.totalPages} ({response.total} total)
+          </span>
+          <button
+            onClick={() => load(page + 1)}
+            disabled={page >= response.totalPages}
+            className="px-4 py-2 rounded-md text-sm font-medium border border-border bg-card text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
         </div>
       )}
     </div>
@@ -567,6 +627,8 @@ function ConcernsTab() {
   const [filter, setFilter] = useState<"All" | "Pending" | "Read" | "Resolved">("All");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [replyId, setReplyId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
   const limit = 10;
 
   const load = async (p: number, q: string = search.trim()) => {
@@ -599,6 +661,27 @@ function ConcernsTab() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleReply = async (id: number) => {
+    if (!replyText.trim()) return;
+    setBusyId(id);
+    setError(null);
+    try {
+      const updated = await updateConcernWithResponse(id, "Resolved", replyText.trim());
+      if (response) {
+        setResponse({
+          ...response,
+          data: response.data.map((c) => (c.id === id ? updated : c)),
+        });
+      }
+      setReplyId(null);
+      setReplyText("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update response");
     } finally {
       setBusyId(null);
     }
@@ -652,6 +735,13 @@ function ConcernsTab() {
                 {f}
               </button>
             ))}
+            <button
+              onClick={() => downloadConcernsCsv(search.trim())}
+              className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors bg-card border text-muted-foreground hover:text-foreground"
+              title="Download all concerns as CSV"
+            >
+              ⬇ Export CSV
+            </button>
           </div>
         </div>
         <form
@@ -665,8 +755,8 @@ function ConcernsTab() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, student number, or message..."
-            className="w-full sm:w-72 rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="Search by name, student number, tracking code, or message..."
+            className="w-full sm:w-80 rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
           <button
             type="submit"
@@ -704,6 +794,12 @@ function ConcernsTab() {
                     {c.student_number} • {c.section} • {c.program}
                   </p>
                   <p className="text-xs text-muted-foreground">{c.institute}</p>
+                  {c.tracking_code && (
+                    <p className="text-xs text-muted-foreground">
+                      Tracking: <code className="bg-muted px-1 py-0.5 rounded">{c.tracking_code}</code>
+                    </p>
+                  )}
+                  {c.email && <p className="text-xs text-muted-foreground">Email: {c.email}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <span
@@ -723,6 +819,13 @@ function ConcernsTab() {
 
               <p className="text-sm text-foreground mt-3 whitespace-pre-line">{c.message}</p>
 
+              {c.response && (
+                <div className="mt-3 rounded-md border border-border bg-muted/40 p-3">
+                  <p className="text-xs font-semibold text-foreground">Response:</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-line">{c.response}</p>
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-2 mt-4">
                 <span className="text-xs text-muted-foreground mr-1">Status:</span>
                 {(["Pending", "Read", "Resolved"] as const).map((s) => (
@@ -740,6 +843,15 @@ function ConcernsTab() {
                     {s}
                   </button>
                 ))}
+
+                <button
+                  onClick={() => { setReplyId(replyId === c.id ? null : c.id); setReplyText(c.response ?? ""); }}
+                  disabled={busyId === c.id}
+                  className="text-xs text-primary border border-primary/30 rounded-md px-2.5 py-1.5 hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  {replyId === c.id ? "Cancel" : c.response ? "Edit response" : "Add response"}
+                </button>
+
                 <button
                   onClick={() => handleDeleteConcern(c.id)}
                   disabled={busyId === c.id}
@@ -748,6 +860,33 @@ function ConcernsTab() {
                   Delete
                 </button>
               </div>
+
+              {replyId === c.id && (
+                <div className="mt-3">
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    rows={3}
+                    placeholder="Write a response for the student..."
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button
+                      onClick={() => setReplyId(null)}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-foreground"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleReply(c.id)}
+                      disabled={busyId === c.id || !replyText.trim()}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-50"
+                    >
+                      {busyId === c.id ? "Saving..." : "Save response"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -778,3 +917,73 @@ function ConcernsTab() {
     </div>
   );
 }
+
+// ── Audit tab ──────────────────────────────────────────────────────
+
+function AuditTab() {
+  const [logs, setLogs] = useState<AuditLogEntry[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setError(null);
+    try {
+      const data = await fetchAuditLog(50);
+      setLogs(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load audit log");
+    }
+  };
+
+  const [loaded, setLoaded] = useState(false);
+  if (!loaded && !logs) {
+    setLoaded(true);
+    void load();
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-foreground">Audit Log</h2>
+        <button
+          onClick={() => void load()}
+          className="px-3 py-1.5 rounded-md text-xs font-medium bg-card border text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ↻ Refresh
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {!logs ? (
+        <div className="bg-card border rounded-lg p-10 text-center text-muted-foreground text-sm">
+          Loading audit log...
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="bg-card border rounded-lg p-10 text-center">
+          <p className="text-muted-foreground text-sm">No audit entries yet.</p>
+        </div>
+      ) : (
+        <div className="bg-card border rounded-lg shadow-sm divide-y">
+          {logs.map((entry) => (
+            <div key={entry.id} className="p-4 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="font-medium text-foreground text-sm">{entry.action}</p>
+                {entry.detail && (
+                  <p className="text-sm text-muted-foreground mt-0.5 break-words">{entry.detail}</p>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {entry.created_at ?? ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+

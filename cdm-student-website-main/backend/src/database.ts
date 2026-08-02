@@ -1,13 +1,28 @@
 import initSqlJs, { type Database as SqlJsDatabase } from "sql.js";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Announcement, Concern } from "./types.js";
+import type { Announcement, Concern, AuditLog } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.resolve(__dirname, "..", "cdm_portal.db");
 
 let db: SqlJsDatabase | null = null;
+
+// ── Tracking code helpers ──────────────────────────────────────────
+const TRACKING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
+
+export function generateTrackingCode(): string {
+  const bytes = crypto.randomBytes(6);
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += TRACKING_ALPHABET[bytes[i] % TRACKING_ALPHABET.length];
+  }
+  return `CDM-${code}`;
+}
+
+// ── Database lifecycle ─────────────────────────────────────────────
 
 export async function getDatabase(): Promise<SqlJsDatabase> {
   if (db) return db;
@@ -24,16 +39,40 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
 
   db.run("PRAGMA foreign_keys = ON");
   initializeSchema(db);
+  runMigrations(db);
+  backfillTrackingCodes(db);
   seedIfEmpty(db);
   saveDatabase(db);
 
   return db;
 }
 
+// Persist the in-memory SQLite database to disk.
+// On Windows, fs.renameSync over an open file throws EPERM, so we
+// fall back to a direct writeFileSync when the atomic rename fails.
 function saveDatabase(database: SqlJsDatabase): void {
   const data = database.export();
   const buffer = Buffer.from(data);
-  fs.writeFileSync(DB_PATH, buffer);
+  const tmpPath = `${DB_PATH}.tmp`;
+
+  try {
+    fs.writeFileSync(tmpPath, buffer);
+    try {
+      fs.renameSync(tmpPath, DB_PATH);
+    } catch (renameErr) {
+      // Windows can refuse to rename over the open file (EPERM/EEXIST).
+      // Fall back to a direct write, then clean up the temp file.
+      fs.writeFileSync(DB_PATH, buffer);
+      try {
+        fs.unlinkSync(tmpPath);
+      } catch {
+        // ignore cleanup failures
+      }
+    }
+  } catch (writeErr) {
+    // Last resort: direct write if even writing the temp file failed.
+    fs.writeFileSync(DB_PATH, buffer);
+  }
 }
 
 function initializeSchema(database: SqlJsDatabase): void {
@@ -64,6 +103,58 @@ function initializeSchema(database: SqlJsDatabase): void {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT NOT NULL,
+      detail TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+}
+
+// Lightweight migrations that add columns/tables without dropping data.
+function runMigrations(database: SqlJsDatabase): void {
+  const cols = database.exec("PRAGMA table_info(concerns)");
+  const existing: string[] =
+    cols.length > 0 ? cols[0].values.map((row) => String(row[1])) : [];
+
+  if (!existing.includes("email")) {
+    database.run("ALTER TABLE concerns ADD COLUMN email TEXT");
+  }
+  if (!existing.includes("response")) {
+    database.run("ALTER TABLE concerns ADD COLUMN response TEXT");
+  }
+  if (!existing.includes("tracking_code")) {
+    database.run("ALTER TABLE concerns ADD COLUMN tracking_code TEXT");
+  }
+}
+
+// Ensure every concern has a tracking code (for rows created before this feature).
+function backfillTrackingCodes(database: SqlJsDatabase): void {
+  const results = database.exec("SELECT id FROM concerns WHERE tracking_code IS NULL OR tracking_code = ''");
+  if (results.length === 0 || results[0].values.length === 0) return;
+
+  const used = new Set<string>();
+  const existingResults = database.exec("SELECT tracking_code FROM concerns WHERE tracking_code IS NOT NULL");
+  if (existingResults.length > 0) {
+    for (const row of existingResults[0].values) used.add(String(row[0]));
+  }
+
+  const stmt = database.prepare("UPDATE concerns SET tracking_code = ? WHERE id = ?");
+  for (const row of results[0].values) {
+    const id = row[0] as number;
+    let code = generateTrackingCode();
+    while (used.has(code)) code = generateTrackingCode();
+    used.add(code);
+    stmt.bind([code, id]);
+    stmt.run();
+    stmt.reset();
+  }
+  stmt.free();
+  saveDatabase(database);
+  console.log(`[DB] Backfilled tracking codes for concerns.`);
 }
 
 function seedIfEmpty(database: SqlJsDatabase): void {
@@ -127,21 +218,57 @@ function seedIfEmpty(database: SqlJsDatabase): void {
   console.log(`[DB] Seeded ${seedData.length} announcements.`);
 }
 
-// ── Query Helpers ──────────────────────────────────────────────────
+// ── Query helpers ──────────────────────────────────────────────────
 
-export async function getAllAnnouncements(): Promise<Announcement[]> {
-  const database = await getDatabase();
-  const results = database.exec("SELECT * FROM announcements ORDER BY created_at DESC");
+function rowsToObjects<T>(results: ReturnType<SqlJsDatabase["exec"]>): T[] {
   if (results.length === 0) return [];
-
   const columns = results[0].columns;
   return results[0].values.map((row) => {
     const obj: Record<string, unknown> = {};
     columns.forEach((col, i) => {
       obj[col] = row[i];
     });
-    return obj as unknown as Announcement;
+    return obj as T;
   });
+}
+
+// ── Announcements ──────────────────────────────────────────────────
+
+export async function getAllAnnouncements(
+  page?: number,
+  limit?: number,
+  sort: "newest" | "oldest" = "newest",
+): Promise<Announcement[] | { data: Announcement[]; total: number; page: number; totalPages: number }> {
+  const database = await getDatabase();
+  const order = sort === "oldest" ? "ASC" : "DESC";
+
+  // Paginated request
+  if (page !== undefined && limit !== undefined) {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(100, Math.max(1, limit));
+    const countResult = database.exec("SELECT COUNT(*) as cnt FROM announcements");
+    const total = countResult.length > 0 ? (countResult[0].values[0][0] as number) : 0;
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    const current = Math.min(safePage, totalPages);
+    const offset = (current - 1) * safeLimit;
+
+    const results = database.exec(
+      `SELECT * FROM announcements ORDER BY created_at ${order}, id ${order} LIMIT ? OFFSET ?`,
+      [safeLimit, offset],
+    );
+    return {
+      data: rowsToObjects<Announcement>(results),
+      total,
+      page: current,
+      totalPages,
+    };
+  }
+
+  // Array request (backward compatible)
+  const results = database.exec(
+    `SELECT * FROM announcements ORDER BY created_at ${order}, id ${order}`,
+  );
+  return rowsToObjects<Announcement>(results);
 }
 
 export async function createAnnouncement(announcement: Announcement): Promise<Announcement> {
@@ -159,11 +286,15 @@ export async function createAnnouncement(announcement: Announcement): Promise<An
   return { id, ...announcement };
 }
 
+// ── Concerns ───────────────────────────────────────────────────────
+
 export async function createConcern(concern: Concern): Promise<Concern> {
   const database = await getDatabase();
+  const trackingCode = generateTrackingCode();
+
   database.run(
-    `INSERT INTO concerns (last_name, first_name, middle_name, student_number, section, institute, program, type, message)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO concerns (last_name, first_name, middle_name, student_number, section, institute, program, type, message, email, response, tracking_code)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       concern.last_name,
       concern.first_name,
@@ -174,41 +305,46 @@ export async function createConcern(concern: Concern): Promise<Concern> {
       concern.program,
       concern.type,
       concern.message,
+      concern.email ?? null,
+      null,
+      trackingCode,
     ],
   );
   const result = database.exec("SELECT last_insert_rowid() AS id");
   saveDatabase(database);
 
   const id = result.length > 0 ? (result[0].values[0][0] as number) : 0;
-  return { id, ...concern, status: "Pending" };
+  return { id, ...concern, status: "Pending", tracking_code: trackingCode };
 }
 
-// ── Admin Query Helpers ────────────────────────────────────────────
-
-function rowsToObjects<T>(results: ReturnType<SqlJsDatabase["exec"]>): T[] {
-  if (results.length === 0) return [];
-  const columns = results[0].columns;
-  return results[0].values.map((row) => {
-    const obj: Record<string, unknown> = {};
-    columns.forEach((col, i) => {
-      obj[col] = row[i];
-    });
-    return obj as T;
-  });
+// Public lookup: returns only non-sensitive info for tracking.
+export async function getConcernByTrackingCode(
+  code: string,
+): Promise<Pick<Concern, "status" | "response" | "type" | "created_at"> | null> {
+  const database = await getDatabase();
+  const results = database.exec(
+    "SELECT status, response, type, created_at FROM concerns WHERE tracking_code = ?",
+    [code.trim().toUpperCase()],
+  );
+  const rows = rowsToObjects<Concern>(results);
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  return { status: row.status, response: row.response, type: row.type, created_at: row.created_at };
 }
 
+// Admin list with pagination + optional search.
 export async function getAllConcerns(
   page: number = 1,
-  limit: number = 50,
+  limit: number = 10,
   search: string = "",
 ): Promise<{ data: Concern[]; total: number; page: number; totalPages: number }> {
   const database = await getDatabase();
 
   const searchTerm = search.trim();
   const searchWhere = searchTerm
-    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%')`
+    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%' OR tracking_code LIKE '%' || ? || '%')`
     : "";
-  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm] : [];
+  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm] : [];
 
   // Get total count
   const countResult = database.exec(
@@ -222,7 +358,7 @@ export async function getAllConcerns(
   const offset = (safePage - 1) * limit;
 
   const results = database.exec(
-    `SELECT * FROM concerns${searchWhere} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT * FROM concerns${searchWhere} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
     [...searchParams, limit, offset],
   );
 
@@ -234,12 +370,43 @@ export async function getAllConcerns(
   };
 }
 
+// All concerns (no pagination) for CSV export.
+export async function getAllConcernsRaw(search: string = ""): Promise<Concern[]> {
+  const database = await getDatabase();
+  const searchTerm = search.trim();
+  const searchWhere = searchTerm
+    ? ` WHERE (last_name LIKE '%' || ? || '%' OR first_name LIKE '%' || ? || '%' OR student_number LIKE '%' || ? || '%' OR message LIKE '%' || ? || '%' OR tracking_code LIKE '%' || ? || '%')`
+    : "";
+  const searchParams = searchTerm ? [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm] : [];
+
+  const results = database.exec(
+    `SELECT * FROM concerns${searchWhere} ORDER BY created_at DESC, id DESC`,
+    searchParams,
+  );
+  return rowsToObjects<Concern>(results);
+}
+
 export async function updateConcernStatus(
   id: number,
   status: "Pending" | "Read" | "Resolved",
 ): Promise<Concern | null> {
   const database = await getDatabase();
   database.run("UPDATE concerns SET status = ? WHERE id = ?", [status, id]);
+  saveDatabase(database);
+
+  const results = database.exec("SELECT * FROM concerns WHERE id = ?", [id]);
+  const concerns = rowsToObjects<Concern>(results);
+  return concerns[0] ?? null;
+}
+
+// Update both status and optional response in one operation.
+export async function updateConcern(id: number, status: string, response?: string): Promise<Concern | null> {
+  const database = await getDatabase();
+  if (response !== undefined) {
+    database.run("UPDATE concerns SET status = ?, response = ? WHERE id = ?", [status, response, id]);
+  } else {
+    database.run("UPDATE concerns SET status = ? WHERE id = ?", [status, id]);
+  }
   saveDatabase(database);
 
   const results = database.exec("SELECT * FROM concerns WHERE id = ?", [id]);
@@ -305,3 +472,22 @@ export async function getStats(): Promise<{
     resolved: count(resolvedResult),
   };
 }
+
+// ── Audit log ──────────────────────────────────────────────────────
+
+export async function addAuditLog(action: string, detail?: string): Promise<void> {
+  const database = await getDatabase();
+  database.run("INSERT INTO audit_log (action, detail) VALUES (?, ?)", [action, detail ?? null]);
+  saveDatabase(database);
+}
+
+export async function getAuditLog(limit: number = 50): Promise<AuditLog[]> {
+  const database = await getDatabase();
+  const safeLimit = Math.min(200, Math.max(1, limit));
+  const results = database.exec(
+    "SELECT * FROM audit_log ORDER BY id DESC LIMIT ?",
+    [safeLimit],
+  );
+  return rowsToObjects<AuditLog>(results);
+}
+

@@ -44,11 +44,18 @@ function SubmitConcernPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [messageLength, setMessageLength] = useState(0);
+  const [consent, setConsent] = useState(false);
+  const [trackingCode, setTrackingCode] = useState<string | null>(null);
   const MAX_MESSAGE_LENGTH = 2000;
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
+
+    if (!consent) {
+      setErrorMessage("Please consent to the data privacy policy to continue.");
+      return;
+    }
 
     setErrorMessage(null);
     setSubmitting(true);
@@ -66,6 +73,8 @@ function SubmitConcernPage() {
       program: String(fd.get("program") ?? "").trim(),
       type: String(fd.get("type") ?? "").trim() as SubmitConcernPayload["type"],
       message: String(fd.get("message") ?? "").trim(),
+      email: String(fd.get("email") ?? "").trim() || undefined,
+      consent,
     };
 
     const missing = Object.entries(payloadDraft)
@@ -74,6 +83,7 @@ function SubmitConcernPage() {
 
     if (missing.length) {
       setErrorMessage(`Please fill out: ${missing.join(", ")}.`);
+      setSubmitting(false);
       return;
     }
 
@@ -84,16 +94,26 @@ function SubmitConcernPage() {
       return;
     }
 
+    // Validate email if provided
+    if (payloadDraft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payloadDraft.email)) {
+      setErrorMessage("Please enter a valid email address.");
+      setSubmitting(false);
+      return;
+    }
+
     const payload: SubmitConcernPayload = payloadDraft;
 
     try {
-      await submitConcern(payload);
+      const result = await submitConcern(payload);
       setSubmitted(true);
+      setTrackingCode(result.tracking_code ?? null);
       toast.success("Concern submitted!", {
         description: "Thank you! Your concern has been recorded.",
       });
       form.reset();
-      setTimeout(() => setSubmitted(false), 4000);
+      setMessageLength(0);
+      setConsent(false);
+      setTimeout(() => setSubmitted(false), 15000);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Submission failed";
       setErrorMessage(message);
@@ -120,7 +140,14 @@ function SubmitConcernPage() {
 
       {submitted && (
         <div className="mb-6 rounded-md border border-secondary bg-secondary/30 px-4 py-3 text-sm text-secondary-foreground">
-          Thank you! Your concern has been recorded.
+          <p className="font-semibold">Thank you! Your concern has been recorded.</p>
+          {trackingCode && (
+            <p className="mt-1">
+              Your tracking code is{" "}
+              <code className="bg-muted px-1.5 py-0.5 rounded font-bold">{trackingCode}</code>. Keep
+              this to check the status of your concern.
+            </p>
+          )}
         </div>
       )}
 
@@ -136,17 +163,17 @@ function SubmitConcernPage() {
             <label className={label}>
               Last name <span className="text-destructive">*</span>
             </label>
-            <input required name="last" className={input} />
+            <input required name="last" className={input} maxLength={120} />
           </div>
           <div>
             <label className={label}>
               First name <span className="text-destructive">*</span>
             </label>
-            <input required name="first" className={input} />
+            <input required name="first" className={input} maxLength={120} />
           </div>
           <div>
             <label className={label}>Middle name</label>
-            <input name="middle" className={input} />
+            <input name="middle" className={input} maxLength={120} />
           </div>
         </fieldset>
 
@@ -155,11 +182,11 @@ function SubmitConcernPage() {
             <label className={label}>
               Student Number <span className="text-destructive">*</span>
             </label>
-            <input required name="studentNumber" className={input} placeholder="e.g. 24-00000" />
+            <input required name="studentNumber" className={input} placeholder="e.g. 24-00000" maxLength={8} />
           </div>
           <div>
             <label className={label}>Year & Section</label>
-            <input required name="section" className={input} placeholder="e.g. 4-A" />
+            <input required name="section" className={input} placeholder="e.g. 4-A" maxLength={120} />
           </div>
         </div>
 
@@ -209,6 +236,11 @@ function SubmitConcernPage() {
         </div>
 
         <div>
+          <label className={label}>Email (optional — for updates on your concern)</label>
+          <input type="email" name="email" className={input} placeholder="you@example.com" maxLength={120} />
+        </div>
+
+        <div>
           <label className={label}>Message</label>
           <textarea
             required
@@ -235,6 +267,24 @@ function SubmitConcernPage() {
           </div>
         </div>
 
+        {/* Data Privacy Act (RA 10173) consent */}
+        <div className="rounded-md border border-border bg-muted/40 p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-1 w-4 h-4 accent-primary shrink-0"
+            />
+            <span className="text-sm text-muted-foreground leading-relaxed">
+              I consent to the collection and processing of my personal information (name, student
+              number, section, program, and concern details) by Colegio de Montalban for the sole
+              purpose of addressing my concern, in accordance with the Data Privacy Act of 2012
+              (RA 10173). <span className="text-destructive">*</span>
+            </span>
+          </label>
+        </div>
+
         <div className="flex justify-end">
           <button
             type="submit"
@@ -248,3 +298,4 @@ function SubmitConcernPage() {
     </div>
   );
 }
+

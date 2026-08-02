@@ -13,7 +13,7 @@ function Index() {
     isError,
   } = useQuery({
     queryKey: ["announcements"],
-    queryFn: fetchAnnouncements,
+    queryFn: () => fetchAnnouncements(),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
   });

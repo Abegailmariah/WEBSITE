@@ -17,7 +17,10 @@ export type AdminConcern = {
   program: string;
   type: "Complaint" | "Question" | "Suggestion";
   message: string;
+  email?: string;
   status: "Pending" | "Read" | "Resolved";
+  response?: string;
+  tracking_code?: string;
   created_at?: string;
 };
 
@@ -29,6 +32,20 @@ export type AdminAnnouncement = {
   content: string;
 };
 
+export type AuditLogEntry = {
+  id: number;
+  action: string;
+  detail?: string;
+  created_at?: string;
+};
+
+export type AdminConcernsResponse = {
+  data: AdminConcern[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
 const DEFAULT_ADMIN_ENDPOINT = "http://localhost:8000/admin";
 
 export function getAdminEndpoint(): string {
@@ -36,33 +53,16 @@ export function getAdminEndpoint(): string {
   return (env?.VITE_ADMIN_ENDPOINT as string) ?? DEFAULT_ADMIN_ENDPOINT;
 }
 
-// ── Token storage ──────────────────────────────────────────────────
-const TOKEN_KEY = "cdm-admin-token";
-
-export function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAdminToken(token: string): void {
-  window.localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearAdminToken(): void {
-  window.localStorage.removeItem(TOKEN_KEY);
-}
-
-// ── API helpers ────────────────────────────────────────────────────
-
+// All admin requests use credentials: "include" so the httpOnly cookie is sent.
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getAdminToken();
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-    ...(options.headers as Record<string, string> | undefined),
-  };
-  if (token) headers.authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${getAdminEndpoint()}${path}`, { ...options, headers });
+  const res = await fetch(`${getAdminEndpoint()}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "content-type": "application/json",
+      ...(options.headers as Record<string, string> | undefined),
+    },
+  });
 
   if (!res.ok) {
     let message = `Request failed: HTTP ${res.status}`;
@@ -83,6 +83,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export async function adminLogin(pin: string): Promise<string> {
   const res = await fetch(`${getAdminEndpoint()}/login`, {
     method: "POST",
+    credentials: "include",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ pin }),
   });
@@ -92,7 +93,6 @@ export async function adminLogin(pin: string): Promise<string> {
   }
 
   const data = (await res.json()) as { token: string };
-  setAdminToken(data.token);
   return data.token;
 }
 
@@ -102,7 +102,16 @@ export async function adminLogout(): Promise<void> {
   } catch {
     // ignore
   }
-  clearAdminToken();
+}
+
+// Check whether the current httpOnly session cookie is valid.
+export async function checkAdminSession(): Promise<boolean> {
+  try {
+    const data = await request<{ authenticated: boolean }>("/session");
+    return data.authenticated === true;
+  } catch {
+    return false;
+  }
 }
 
 export function fetchAdminStats(): Promise<AdminStats> {
@@ -113,12 +122,21 @@ export function fetchAdminConcerns(
   page: number = 1,
   limit: number = 10,
   search: string = "",
-): Promise<{ data: AdminConcern[]; total: number; page: number; totalPages: number }> {
+): Promise<AdminConcernsResponse> {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (search) params.set("search", search);
-  return request<{ data: AdminConcern[]; total: number; page: number; totalPages: number }>(
-    `/concerns?${params.toString()}`,
-  );
+  return request<AdminConcernsResponse>(`/concerns?${params.toString()}`);
+}
+
+// Download all concerns as CSV via a hidden anchor.
+export function downloadConcernsCsv(search: string = ""): void {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const url = `${getAdminEndpoint()}/concerns/export?${params.toString()}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.rel = "noopener";
+  a.click();
 }
 
 export function updateConcernStatus(
@@ -128,6 +146,17 @@ export function updateConcernStatus(
   return request<AdminConcern>(`/concerns/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export function updateConcernWithResponse(
+  id: number,
+  status: AdminConcern["status"],
+  response: string,
+): Promise<AdminConcern> {
+  return request<AdminConcern>(`/concerns/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, response }),
   });
 }
 
@@ -156,5 +185,9 @@ export function deleteAnnouncement(id: number): Promise<{ ok: boolean; id: numbe
   return request<{ ok: boolean; id: number }>(`/announcements/${id}`, {
     method: "DELETE",
   });
+}
+
+export function fetchAuditLog(limit: number = 50): Promise<AuditLogEntry[]> {
+  return request<AuditLogEntry[]>(`/audit?limit=${limit}`);
 }
 

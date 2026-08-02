@@ -5,7 +5,6 @@ const quickLinks = [
   { label: "Announcements", to: "/announcements" as const },
   { label: "Submit Concern", to: "/submit-concern" as const },
   { label: "Contact", to: "/contact" as const },
-  { label: "Admin", to: "/admin" as const },
 ];
 
 const contactInfo = [
@@ -24,7 +23,7 @@ const contactInfo = [
 export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
-      <div className="max-w-6xl mx-auto px-4 py-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="max-w-6xl mx-auto px-4 py-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* School info */}
         <div className="sm:col-span-2 lg:col-span-2">
           <div className="flex items-center gap-3">
