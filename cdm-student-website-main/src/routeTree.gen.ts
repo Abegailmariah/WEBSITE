@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as StudentRouteImport } from './routes/student'
 import { Route as SubmitConcernRouteImport } from './routes/submit-concern'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubmitConcernRoute = SubmitConcernRouteImport.update({
   id: '/submit-concern',
   path: '/submit-concern',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/student': typeof StudentRoute
   '/submit-concern': typeof SubmitConcernRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/student': typeof StudentRoute
   '/submit-concern': typeof SubmitConcernRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/student': typeof StudentRoute
   '/submit-concern': typeof SubmitConcernRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/announcements' | '/contact' | '/submit-concern'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/announcements'
+    | '/contact'
+    | '/student'
+    | '/submit-concern'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/announcements' | '/contact' | '/submit-concern'
+  to:
+    | '/'
+    | '/admin'
+    | '/announcements'
+    | '/contact'
+    | '/student'
+    | '/submit-concern'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/announcements'
     | '/contact'
+    | '/student'
     | '/submit-concern'
   fileRoutesById: FileRoutesById
 }
@@ -82,6 +104,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   ContactRoute: typeof ContactRoute
+  StudentRoute: typeof StudentRoute
   SubmitConcernRoute: typeof SubmitConcernRoute
 }
 
@@ -115,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/submit-concern': {
       id: '/submit-concern'
       path: '/submit-concern'
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   ContactRoute: ContactRoute,
+  StudentRoute: StudentRoute,
   SubmitConcernRoute: SubmitConcernRoute,
 }
 export const routeTree = rootRouteImport

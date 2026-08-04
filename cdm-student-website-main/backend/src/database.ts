@@ -2,7 +2,8 @@ import initSqlJs, { type Database as SqlJsDatabase } from "sql.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Announcement, Concern, AuditLog } from "./types.js";
+import { hashPassword } from "./student-auth.js";
+import type { Announcement, Concern, AuditLog, Student } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.resolve(__dirname, "..", "cdm_portal.db");
@@ -28,6 +29,7 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
   initializeSchema(db);
   runMigrations(db);
   seedIfEmpty(db);
+  seedStudentsIfEmpty(db);
   saveDatabase(db);
 
   return db;
@@ -90,11 +92,26 @@ function initializeSchema(database: SqlJsDatabase): void {
     )
   `);
 
-  database.run(`
+database.run(`
     CREATE TABLE IF NOT EXISTS audit_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       action TEXT NOT NULL,
       detail TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS students (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_number TEXT NOT NULL UNIQUE,
+      last_name TEXT NOT NULL,
+      first_name TEXT NOT NULL,
+      middle_name TEXT,
+      section TEXT NOT NULL,
+      institute TEXT NOT NULL,
+      program TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -173,6 +190,70 @@ function seedIfEmpty(database: SqlJsDatabase): void {
 
   saveDatabase(database);
   console.log(`[DB] Seeded ${seedData.length} announcements.`);
+}
+
+// Ensure a demo student account exists so the student dashboard can be
+// tested right away. Login with: 24-00123 / student123
+// This is idempotent: if the account already exists it is updated to the
+// documented demo credentials so the demo login always works.
+function seedStudentsIfEmpty(database: SqlJsDatabase): void {
+  const demo = {
+    student_number: "24-00123",
+    last_name: "Demo",
+    first_name: "Student",
+    middle_name: "Account",
+    section: "4-A",
+    institute: "ICS — Institute of Computer Studies",
+    program: "BSIT",
+    password_hash: hashPassword("student123"),
+  };
+
+  const existing = database.exec(
+    "SELECT id FROM students WHERE student_number = ?",
+    [demo.student_number],
+  );
+
+  if (existing.length > 0 && existing[0].values.length > 0) {
+    // Update the existing demo account to the documented credentials.
+    database.run(
+      `UPDATE students SET last_name = ?, first_name = ?, middle_name = ?, section = ?, institute = ?, program = ?, password_hash = ?
+       WHERE student_number = ?`,
+      [
+        demo.last_name,
+        demo.first_name,
+        demo.middle_name,
+        demo.section,
+        demo.institute,
+        demo.program,
+        demo.password_hash,
+        demo.student_number,
+      ],
+    );
+    saveDatabase(database);
+    console.log("[DB] Demo student account updated (24-00123 / student123).");
+    return;
+  }
+
+  const stmt = database.prepare(
+    `INSERT INTO students (student_number, last_name, first_name, middle_name, section, institute, program, password_hash)
+     VALUES (@student_number, @last_name, @first_name, @middle_name, @section, @institute, @program, @password_hash)`,
+  );
+
+  stmt.bind({
+    "@student_number": demo.student_number,
+    "@last_name": demo.last_name,
+    "@first_name": demo.first_name,
+    "@middle_name": demo.middle_name,
+    "@section": demo.section,
+    "@institute": demo.institute,
+    "@program": demo.program,
+    "@password_hash": demo.password_hash,
+  });
+  stmt.run();
+  stmt.free();
+
+  saveDatabase(database);
+  console.log("[DB] Seeded demo student account (24-00123 / student123).");
 }
 
 // ── Query helpers ──────────────────────────────────────────────────
@@ -428,4 +509,55 @@ export async function getAuditLog(limit: number = 50): Promise<AuditLog[]> {
     [safeLimit],
   );
   return rowsToObjects<AuditLog>(results);
+}
+
+// ── Students ───────────────────────────────────────────────────────
+
+export async function getStudentByStudentNumber(studentNumber: string): Promise<Student | null> {
+  const database = await getDatabase();
+  const results = database.exec("SELECT * FROM students WHERE student_number = ?", [studentNumber]);
+  const students = rowsToObjects<Student>(results);
+  return students[0] ?? null;
+}
+
+export async function getStudentById(id: number): Promise<Student | null> {
+  const database = await getDatabase();
+  const results = database.exec("SELECT * FROM students WHERE id = ?", [id]);
+  const students = rowsToObjects<Student>(results);
+  return students[0] ?? null;
+}
+
+export async function createStudent(
+  student: Omit<Student, "id" | "created_at">,
+): Promise<Student> {
+  const database = await getDatabase();
+  database.run(
+    `INSERT INTO students (student_number, last_name, first_name, middle_name, section, institute, program, password_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      student.student_number,
+      student.last_name,
+      student.first_name,
+      student.middle_name ?? null,
+      student.section,
+      student.institute,
+      student.program,
+      student.password_hash,
+    ],
+  );
+  const result = database.exec("SELECT last_insert_rowid() AS id");
+  saveDatabase(database);
+
+  const id = result.length > 0 ? (result[0].values[0][0] as number) : 0;
+  return { id, ...student };
+}
+
+// Get all concerns submitted by a specific student (by student number).
+export async function getConcernsByStudent(studentNumber: string): Promise<Concern[]> {
+  const database = await getDatabase();
+  const results = database.exec(
+    "SELECT * FROM concerns WHERE student_number = ? ORDER BY created_at DESC, id DESC",
+    [studentNumber],
+  );
+  return rowsToObjects<Concern>(results);
 }

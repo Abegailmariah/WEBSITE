@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit";
 import announcementsRouter from "./routes/announcements.js";
 import concernsRouter from "./routes/concerns.js";
 import adminRouter from "./routes/admin.js";
+import studentsRouter from "./routes/students.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "8000", 10);
@@ -75,6 +76,7 @@ app.use("/announcements", announcementsRouter);
 app.use("/submit-concern", concernSubmitLimiter, concernsRouter);
 app.use("/admin/login", adminLoginLimiter);
 app.use("/admin", adminMutationLimiter, adminRouter);
+app.use("/student", studentsRouter);
 
 // ── 404 Handler ────────────────────────────────────────────────────
 app.use((_req, res) => {

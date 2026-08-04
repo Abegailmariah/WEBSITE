@@ -1,3 +1,4 @@
+
 export interface Announcement {
   id?: number;
   title: string;
@@ -27,5 +28,18 @@ export interface AuditLog {
   id?: number;
   action: string;
   detail?: string;
+  created_at?: string;
+}
+
+export interface Student {
+  id?: number;
+  student_number: string;
+  last_name: string;
+  first_name: string;
+  middle_name?: string;
+  section: string;
+  institute: string;
+  program: string;
+  password_hash: string;
   created_at?: string;
 }
