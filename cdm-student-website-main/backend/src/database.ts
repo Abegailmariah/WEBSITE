@@ -196,7 +196,15 @@ function seedIfEmpty(database: SqlJsDatabase): void {
 // tested right away. Login with: 24-00123 / student123
 // This is idempotent: if the account already exists it is updated to the
 // documented demo credentials so the demo login always works.
+// IMPORTANT: The demo account is only seeded in non-production environments.
+// In production it is deliberately NOT created so that weak demo credentials
+// never exist.
 function seedStudentsIfEmpty(database: SqlJsDatabase): void {
+  if (process.env.NODE_ENV === "production") {
+    console.log("[DB] Skipped demo student seeding (production mode).");
+    return;
+  }
+
   const demo = {
     student_number: "24-00123",
     last_name: "Demo",

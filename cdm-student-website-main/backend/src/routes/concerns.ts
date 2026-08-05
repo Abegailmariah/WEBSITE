@@ -4,11 +4,14 @@ import { createConcern } from "../database.js";
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_FIELD_LENGTH = 120;
 
-// Strip HTML tags and trim whitespace
+// Strip HTML tags, encoded entities, angle brackets, and control characters,
+// then trim. Conservative sanitizer for plain-text storage.
 function sanitize(str: string): string {
   return str
     .replace(/<[^>]*>/g, "") // Strip HTML tags
     .replace(/[<>]/g, "") // Remove any remaining angle brackets
+    .replace(/&[a-zA-Z0-9#]+;/g, "") // Strip HTML entities (&amp; < &#123; etc.)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "") // Strip control chars
     .trim();
 }
 

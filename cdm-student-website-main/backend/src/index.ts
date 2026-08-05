@@ -1,13 +1,22 @@
+// MUST be the very first import so the .env file is loaded before any other
+// module (e.g. auth.ts) reads process.env at load time.
+import "./load-env.js";
+
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import announcementsRouter from "./routes/announcements.js";
 import concernsRouter from "./routes/concerns.js";
 import adminRouter from "./routes/admin.js";
 import studentsRouter from "./routes/students.js";
+import { csrfCookieBootstrap, requireCsrf } from "./csrf.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "8000", 10);
+
+// ── Security Headers (Helmet) ──────────────────────────────────────
+app.use(helmet());
 
 // ── CORS ───────────────────────────────────────────────────────────
 // Restrict to explicit origins, plus any localhost/127.0.0.1 origin for
@@ -63,8 +72,21 @@ const adminMutationLimiter = rateLimit({
   message: { error: "Too many admin actions. Please slow down." },
 });
 
+const studentLoginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 attempts per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Try again later." },
+});
+
 // ── Middleware ──────────────────────────────────────────────────────
 app.use(express.json({ limit: "16kb" }));
+
+// Provide a CSRF cookie to every client and validate state-changing
+// requests across all routes.
+app.use(csrfCookieBootstrap);
+app.use(requireCsrf);
 
 // ── Health Check ───────────────────────────────────────────────────
 app.get("/", (_req, res) => {
@@ -76,6 +98,7 @@ app.use("/announcements", announcementsRouter);
 app.use("/submit-concern", concernSubmitLimiter, concernsRouter);
 app.use("/admin/login", adminLoginLimiter);
 app.use("/admin", adminMutationLimiter, adminRouter);
+app.use("/student/login", studentLoginLimiter);
 app.use("/student", studentsRouter);
 
 // ── 404 Handler ────────────────────────────────────────────────────

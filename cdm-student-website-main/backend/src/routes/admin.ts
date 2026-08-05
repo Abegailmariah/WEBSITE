@@ -95,12 +95,15 @@ router.get("/concerns/export", requireAuth, async (req: Request, res: Response) 
     const concerns = await getAllConcernsRaw(search);
 
     const escapeCsv = (v: unknown): string => {
-      const s = v === null || v === undefined ? "" : String(v);
-      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      let s = v === null || v === undefined ? "" : String(v);
+      // Neutralize spreadsheet formula injection (OWASP): if a cell starts
+      // with =, +, -, @, tab, or CR, prefix it with a single quote.
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      if (/[\",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
       return s;
     };
 
-const header = [
+    const header = [
       "id", "last_name", "first_name", "middle_name",
       "student_number", "section", "institute", "program", "type",
       "status", "message", "response", "created_at",
@@ -257,4 +260,3 @@ function awaitAudit(action: string, detail?: string): void {
 }
 
 export default router;
-

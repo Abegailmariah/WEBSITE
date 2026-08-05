@@ -6,6 +6,40 @@ const SESSION_TTL_MS = parseInt(process.env.STUDENT_SESSION_TTL_MS ?? String(12 
 // In-memory session store. Tokens are invalidated on server restart.
 const sessions = new Map<string, { studentId: number; expiresAt: number }>();
 
+// ── Account lockout (brute-force protection) ───────────────────────
+const MAX_FAILED_ATTEMPTS = parseInt(process.env.STUDENT_MAX_FAILED ?? "5", 10);
+const LOCKOUT_MS = parseInt(process.env.STUDENT_LOCKOUT_MS ?? String(15 * 60 * 1000), 10); // 15 min
+const failedAttempts = new Map<string, { count: number; lockUntil: number }>();
+
+export function isStudentLocked(studentNumber: string): boolean {
+  const entry = failedAttempts.get(studentNumber);
+  if (!entry) return false;
+  if (entry.lockUntil > Date.now()) return true;
+  // Lock expired — clear it.
+  failedAttempts.delete(studentNumber);
+  return false;
+}
+
+export function recordFailedAttempt(studentNumber: string): void {
+  const entry = failedAttempts.get(studentNumber) ?? { count: 0, lockUntil: 0 };
+  entry.count += 1;
+  if (entry.count >= MAX_FAILED_ATTEMPTS) {
+    entry.lockUntil = Date.now() + LOCKOUT_MS;
+    entry.count = 0; // reset count once locked
+  }
+  failedAttempts.set(studentNumber, entry);
+}
+
+export function clearFailedAttempts(studentNumber: string): void {
+  failedAttempts.delete(studentNumber);
+}
+
+export function getLockoutRemaining(studentNumber: string): number {
+  const entry = failedAttempts.get(studentNumber);
+  if (!entry) return 0;
+  return Math.max(0, entry.lockUntil - Date.now());
+}
+
 // ── Password hashing (scrypt) ──────────────────────────────────────
 
 export function hashPassword(password: string): string {

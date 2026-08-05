@@ -16,6 +16,10 @@ import {
   requireStudent,
   STUDENT_COOKIE_NAME,
   extractStudentToken,
+  isStudentLocked,
+  recordFailedAttempt,
+  clearFailedAttempts,
+  getLockoutRemaining,
 } from "../student-auth.js";
 
 const router = Router();
@@ -64,7 +68,9 @@ router.post("/register", async (req: Request, res: Response) => {
     if (!institute || typeof institute !== "string") errors.push("institute is required");
     if (!program || typeof program !== "string") errors.push("program is required");
     if (!password || typeof password !== "string") errors.push("password is required");
-    if (password && password.length < 6) errors.push("password must be at least 6 characters");
+    if (password && password.length < 8) errors.push("password must be at least 8 characters");
+    if (password && !/[a-zA-Z]/.test(password)) errors.push("password must contain at least one letter");
+    if (password && !/\d/.test(password)) errors.push("password must contain at least one number");
     if (studentNumber && !/^\d{2}-\d{5}$/.test(String(studentNumber).trim()))
       errors.push("studentNumber must match format YY-NNNNN (e.g., 24-00123)");
 
@@ -110,11 +116,26 @@ router.post("/login", async (req: Request, res: Response) => {
       return;
     }
 
-    const student = await getStudentByStudentNumber(String(studentNumber).trim());
-    if (!student || !student.password_hash || !verifyPassword(String(password), student.password_hash)) {
+    const studentNumberTrim = String(studentNumber).trim();
+
+    // Account lockout check before attempting verification.
+    if (isStudentLocked(studentNumberTrim)) {
+      const remaining = Math.ceil(getLockoutRemaining(studentNumberTrim) / 1000);
+      res.status(429).json({ error: `Account temporarily locked. Try again in ${remaining} seconds.` });
+      return;
+    }
+
+    const student = await getStudentByStudentNumber(studentNumberTrim);
+    const valid = !!student && !!student.password_hash && verifyPassword(String(password), student.password_hash);
+
+    if (!valid) {
+      recordFailedAttempt(studentNumberTrim);
       res.status(401).json({ error: "Invalid student number or password" });
       return;
     }
+
+    // Successful login — clear any prior failed attempts.
+    clearFailedAttempts(studentNumberTrim);
 
     const token = createStudentSession(student.id ?? 0);
     res.cookie(STUDENT_COOKIE_NAME, token, COOKIE_OPTIONS);
@@ -166,11 +187,15 @@ router.get("/concerns", requireStudent, async (req: Request, res: Response) => {
   }
 });
 
-// sanitize: strip HTML tags and angle brackets, then trim
+// sanitize: strip HTML tags, encoded entities, angle brackets, and control
+// characters, then trim. This is a deliberately conservative sanitizer for
+// plain-text storage.
 function sanitize(str: string): string {
-  return str
-    .replace(/<[^>]*>/g, "")
-    .replace(/[<>]/g, "")
+  return String(str)
+    .replace(/<[^>]*>/g, "") // Strip HTML tags
+    .replace(/[<>]/g, "") // Remove any remaining angle brackets
+    .replace(/&[a-zA-Z0-9#]+;/g, "") // Strip HTML entities (&amp; < &#123; etc.)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "") // Strip control chars
     .trim();
 }
 

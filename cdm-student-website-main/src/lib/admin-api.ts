@@ -1,3 +1,5 @@
+import { getCsrfHeader } from "./csrf";
+
 export type AdminStats = {
   announcements: number;
   concerns: number;
@@ -53,11 +55,15 @@ export function getAdminEndpoint(): string {
 
 // All admin requests use credentials: "include" so the httpOnly cookie is sent.
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
+  const isStateChanging = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
   const res = await fetch(`${getAdminEndpoint()}${path}`, {
     ...options,
     credentials: "include",
     headers: {
       "content-type": "application/json",
+      // Attach the CSRF token for state-changing requests (double-submit).
+      ...(isStateChanging ? getCsrfHeader() : {}),
       ...(options.headers as Record<string, string> | undefined),
     },
   });
@@ -82,7 +88,10 @@ export async function adminLogin(pin: string): Promise<string> {
   const res = await fetch(`${getAdminEndpoint()}/login`, {
     method: "POST",
     credentials: "include",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      ...getCsrfHeader(),
+    },
     body: JSON.stringify({ pin }),
   });
 

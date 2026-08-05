@@ -1,8 +1,13 @@
 import crypto from "node:crypto";
 import type { Request, Response, NextFunction } from "express";
 
-// Admin PIN comes from env (default for local development).
-const ADMIN_PIN = process.env.ADMIN_PIN ?? "admin123";
+// Admin PIN comes from env. Fail closed if it is not set — never fall back to
+// a hardcoded default, which would be a critical security hole in production.
+const ADMIN_PIN = process.env.ADMIN_PIN ?? "";
+if (!ADMIN_PIN) {
+  console.error("[Auth] FATAL: ADMIN_PIN environment variable is not set. Refusing to start.");
+  process.exit(1);
+}
 const SESSION_TTL_MS = parseInt(process.env.SESSION_TTL_MS ?? String(8 * 60 * 60 * 1000), 10); // 8h
 
 // In-memory session store with expiry. Tokens are invalidated on server restart.
