@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { BackToTop } from "@/components/BackToTop";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
@@ -151,6 +152,7 @@ function RootComponent() {
         </main>
         <Footer />
       </div>
+      <BackToTop />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAnnouncements, type Announcement } from "@/lib/announcements-api";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/announcements")({
   head: () => ({
@@ -56,14 +58,14 @@ function AnnouncementsPage() {
     }
   }
 
-  // Loading skeleton
+// Loading skeleton
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-          <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-        </header>
+        <PageHeader
+          title="Announcements"
+          subtitle="Official updates from Colegio de Montalban."
+        />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((s) => (
             <div key={s} className="bg-card border rounded-lg p-5 shadow-sm animate-pulse">
@@ -82,14 +84,14 @@ function AnnouncementsPage() {
     );
   }
 
-  // Error state
+// Error state
   if (isError) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-          <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-        </header>
+        <PageHeader
+          title="Announcements"
+          subtitle="Official updates from Colegio de Montalban."
+        />
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-center">
           <p className="text-destructive font-medium">Failed to load announcements.</p>
           <p className="text-sm text-muted-foreground mt-1">
@@ -106,21 +108,19 @@ function AnnouncementsPage() {
     );
   }
 
-  // Empty state
+// Empty state
   if (announcements.length === 0) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-          <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-        </header>
-        <div className="rounded-lg border bg-card p-10 text-center">
-          <div className="text-4xl mb-3">📢</div>
-          <p className="text-lg font-medium text-foreground">No announcements yet</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Check back later for official updates.
-          </p>
-        </div>
+        <PageHeader
+          title="Announcements"
+          subtitle="Official updates from Colegio de Montalban."
+        />
+        <EmptyState
+          icon="announcement"
+          title="No announcements yet"
+          description="Check back later for official updates."
+        />
       </div>
     );
   }
@@ -135,12 +135,12 @@ function AnnouncementsPage() {
     return matchesSearch && matchesPriority;
   });
 
-  return (
+return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Announcements</h1>
-        <p className="text-muted-foreground mt-1">Official updates from Colegio de Montalban.</p>
-      </header>
+      <PageHeader
+        title="Announcements"
+        subtitle="Official updates from Colegio de Montalban."
+      />
 
       {/* Search + priority filter */}
       <div className="mb-6 flex flex-col sm:flex-row gap-3">
@@ -149,6 +149,7 @@ function AnnouncementsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search announcements..."
+          aria-label="Search announcements"
           className="w-full sm:w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
         />
         <div className="flex flex-wrap gap-2">
@@ -166,24 +167,24 @@ function AnnouncementsPage() {
               {p}
             </button>
           ))}
-          <button
+<button
             onClick={() => setSort((s) => (s === "newest" ? "oldest" : "newest"))}
             className="px-3 py-2 rounded-md text-xs font-medium transition-colors bg-card border text-muted-foreground hover:text-foreground"
             title="Toggle sort order"
+            aria-label="Toggle announcement sort order"
+            aria-pressed={sort === "newest"}
           >
             {sort === "newest" ? "Newest first" : "Oldest first"} ↑↓
           </button>
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="rounded-lg border bg-card p-10 text-center">
-          <div className="text-4xl mb-3">📢</div>
-          <p className="text-lg font-medium text-foreground">No announcements match your search</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Try adjusting your search or filter.
-          </p>
-        </div>
+{filtered.length === 0 ? (
+        <EmptyState
+          icon="search"
+          title="No announcements match your search"
+          description="Try adjusting your search or filter."
+        />
       ) : (
         <div
           className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
@@ -191,8 +192,11 @@ function AnnouncementsPage() {
           role="region"
           aria-label="All announcements list"
         >
-          {filtered.map((a) => (
-            <article key={a.id} className="bg-card border rounded-lg p-5 shadow-sm flex flex-col">
+{filtered.map((a) => (
+            <article
+              key={a.id}
+              className="bg-card border rounded-lg p-5 shadow-sm flex flex-col hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">{a.date}</span>
                 <span

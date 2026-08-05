@@ -10,10 +10,11 @@ import {
   studentLogout,
   fetchStudentConcerns,
   fetchStudentAnnouncements,
-  submitStudentConcern,
   type Student,
+  type StudentConcern,
   type StudentRegisterPayload,
 } from "@/lib/student-api";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/student")({
   head: () => ({
@@ -33,6 +34,20 @@ export const Route = createFileRoute("/student")({
   component: StudentPage,
 });
 
+function GreetingHeader({ student }: { student: Student }) {
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-primary">
+        {getGreeting()}, {student.first_name} 👋
+      </h1>
+      <p className="text-muted-foreground mt-1">{formatToday()}</p>
+      <p className="text-sm text-muted-foreground mt-1">
+        {student.institute} — {student.program} · {student.section} · {student.student_number}
+      </p>
+    </div>
+  );
+}
+
 const institutes = [
   "ICS — Institute of Computer Studies",
   "IBE — Institute of Business and Entrepreneurship",
@@ -50,12 +65,42 @@ const programs = [
   "BTLEd ICT",
 ];
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function formatToday(): string {
+  return new Date().toLocaleDateString("en-PH", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+const concernTypeMeta: Record<
+  StudentConcern["type"],
+  { icon: string; badgeClass: string }
+> = {
+  Complaint: { icon: "⚠️", badgeClass: "bg-destructive/10 text-destructive" },
+  Question: { icon: "❓", badgeClass: "bg-blue-100 text-blue-700" },
+  Suggestion: { icon: "💡", badgeClass: "bg-secondary/40 text-secondary-foreground" },
+};
+
 function StudentPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Search & filter state
+  const [concernSearch, setConcernSearch] = useState("");
+  const [concernStatus, setConcernStatus] = useState("All");
+  const [announcementSearch, setAnnouncementSearch] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -325,22 +370,30 @@ function StudentPage() {
     );
   }
 
+  // Filtered lists
+  const statusOptions = ["All", "Pending", "Read", "Resolved"];
+  const filteredConcerns = concerns.filter((c) => {
+    const matchesSearch =
+      concernSearch.trim() === "" ||
+      c.type.toLowerCase().includes(concernSearch.toLowerCase()) ||
+      c.message.toLowerCase().includes(concernSearch.toLowerCase());
+    const matchesStatus = concernStatus === "All" || c.status === concernStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredAnnouncements = announcements.filter((a) => {
+    return (
+      announcementSearch.trim() === "" ||
+      a.title.toLowerCase().includes(announcementSearch.toLowerCase()) ||
+      a.content.toLowerCase().includes(announcementSearch.toLowerCase())
+    );
+  });
+
   // Dashboard
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">Student Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            {student.first_name} {student.middle_name ? `${student.middle_name} ` : ""}
-            {student.last_name}
-            {" · "}
-            {student.student_number}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {student.institute} — {student.program} · {student.section}
-          </p>
-        </div>
+<header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <GreetingHeader student={student} />
         <button
           onClick={handleLogout}
           className="bg-card border px-4 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -349,8 +402,48 @@ function StudentPage() {
         </button>
       </header>
 
-      {/* Submit a concern from the dashboard (auto-fills student info) */}
-      <SubmitConcernForm student={student} onSubmitted={() => refetchConcerns()} />
+      {/* My Profile */}
+      <section className="mb-8">
+        <div className="bg-card border rounded-lg shadow-sm p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold shrink-0">
+              {student.first_name.charAt(0)}
+              {student.last_name.charAt(0)}
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">My Profile</h2>
+              <p className="text-sm text-muted-foreground">
+                Keep your account information up to date.
+              </p>
+            </div>
+          </div>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Full Name</dt>
+              <dd className="text-sm font-medium text-foreground">
+                {student.last_name}, {student.first_name}{" "}
+                {student.middle_name ? `${student.middle_name}` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Student Number</dt>
+              <dd className="text-sm font-medium text-foreground">{student.student_number}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Year & Section</dt>
+              <dd className="text-sm font-medium text-foreground">{student.section}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Program</dt>
+              <dd className="text-sm font-medium text-foreground">{student.program}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted-foreground">Institute</dt>
+              <dd className="text-sm font-medium text-foreground">{student.institute}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* My Concerns */}
@@ -365,23 +458,49 @@ function StudentPage() {
             </button>
           </div>
 
+          {/* Search & filter controls */}
+          <div className="mb-4 grid gap-3">
+<input
+              type="search"
+              value={concernSearch}
+              onChange={(e) => setConcernSearch(e.target.value)}
+              className={input}
+              placeholder="Search concerns..."
+              aria-label="Search concerns"
+            />
+            <select
+              value={concernStatus}
+              onChange={(e) => setConcernStatus(e.target.value)}
+              className={input}
+              aria-label="Filter by concern status"
+            >
+              {statusOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s === "All" ? "All statuses" : s}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {concernsLoading ? (
             <div className="bg-card border rounded-lg p-5 animate-pulse space-y-3">
               <div className="h-4 w-3/4 bg-muted rounded" />
               <div className="h-3 w-full bg-muted rounded" />
               <div className="h-3 w-2/3 bg-muted rounded" />
             </div>
-          ) : concerns.length === 0 ? (
-            <div className="rounded-lg border bg-card p-8 text-center">
-              <div className="text-4xl mb-3">📬</div>
-              <p className="text-lg font-medium text-foreground">No concerns yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your submitted concerns will appear here with their status.
-              </p>
-            </div>
+) : filteredConcerns.length === 0 ? (
+            <EmptyState
+              icon="concern"
+              title={concerns.length === 0 ? "No concerns yet" : "No matching concerns"}
+              description={
+                concerns.length === 0
+                  ? "Your submitted concerns will appear here with their status."
+                  : "Try adjusting your search or status filter."
+              }
+            />
           ) : (
             <div className="space-y-3">
-              {concerns.map((c) => (
+              {filteredConcerns.map((c) => (
                 <article key={c.id} className="bg-card border rounded-lg p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-muted-foreground">{c.created_at}</span>
@@ -397,9 +516,17 @@ function StudentPage() {
                     >
                       {c.status}
                     </span>
-                  </div>
-                  <h3 className="font-semibold text-foreground">{c.type}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{c.message}</p>
+</div>
+                  <span
+                    className={
+                      "inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full " +
+                      concernTypeMeta[c.type].badgeClass
+                    }
+                  >
+                    <span aria-hidden="true">{concernTypeMeta[c.type].icon}</span>
+                    {c.type}
+                  </span>
+                  <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{c.message}</p>
                   {c.response && (
                     <div className="mt-3 rounded-md bg-muted/40 border px-3 py-2 text-sm">
                       <span className="font-medium text-foreground">Response: </span>
@@ -415,6 +542,19 @@ function StudentPage() {
         {/* Relevant Announcements */}
         <section>
           <h2 className="text-xl font-semibold text-foreground mb-4">Announcements</h2>
+
+          {/* Search controls */}
+          <div className="mb-4">
+<input
+              type="search"
+              value={announcementSearch}
+              onChange={(e) => setAnnouncementSearch(e.target.value)}
+              className={input}
+              placeholder="Search announcements..."
+              aria-label="Search announcements"
+            />
+          </div>
+
           {announcementsLoading ? (
             <div className="space-y-3">
               {[1, 2].map((s) => (
@@ -425,17 +565,19 @@ function StudentPage() {
                 </div>
               ))}
             </div>
-          ) : announcements.length === 0 ? (
-            <div className="rounded-lg border bg-card p-8 text-center">
-              <div className="text-4xl mb-3">📢</div>
-              <p className="text-lg font-medium text-foreground">No announcements</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Check back later for official updates.
-              </p>
-            </div>
+          ) : filteredAnnouncements.length === 0 ? (
+            <EmptyState
+              icon="announcement"
+              title={announcements.length === 0 ? "No announcements" : "No matching announcements"}
+              description={
+                announcements.length === 0
+                  ? "Check back later for official updates."
+                  : "Try a different search term."
+              }
+            />
           ) : (
             <div className="space-y-3">
-              {announcements.map((a) => (
+              {filteredAnnouncements.map((a) => (
                 <article key={a.id} className="bg-card border rounded-lg p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-muted-foreground">{a.date}</span>
@@ -461,183 +603,5 @@ function StudentPage() {
         </section>
       </div>
     </div>
-  );
-}
-
-// ── Submit a Concern form (inside the dashboard) ───────────────────
-
-function SubmitConcernForm({ student, onSubmitted }: { student: Student; onSubmitted: () => void }) {
-  const [type, setType] = useState<"Complaint" | "Question" | "Suggestion">("Complaint");
-  const [message, setMessage] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const MAX_MESSAGE_LENGTH = 2000;
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (busy) return;
-
-    if (!consent) {
-      setError("Please consent to the data privacy policy to continue.");
-      return;
-    }
-    if (!message.trim()) {
-      setError("Please describe your concern.");
-      return;
-    }
-
-    setError(null);
-    setBusy(true);
-    try {
-      await submitStudentConcern({ type, message: message.trim(), consent });
-      setSuccess(true);
-      setMessage("");
-      setType("Complaint");
-      setConsent(false);
-      toast.success("Concern submitted!", {
-        description: "Thank you! Your concern has been recorded.",
-      });
-      onSubmitted();
-      setTimeout(() => setSuccess(false), 15000);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Submission failed";
-      setError(msg);
-      toast.error("Submission failed", { description: msg });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const label = "block text-sm font-medium text-foreground mb-1";
-  const input =
-    "w-full rounded-md border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40 outline-none disabled:opacity-70";
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-card border rounded-lg shadow-sm p-6 grid gap-5 mb-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-foreground">Submit a Concern</h2>
-        {success && (
-          <span className="text-sm font-medium text-emerald-600">✓ Submitted</span>
-        )}
-      </div>
-
-      {error && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {/* Auto-filled student info (read-only) */}
-      <fieldset className="grid gap-4 sm:grid-cols-3">
-        <div>
-          <label className={label}>Last name</label>
-          <input value={student.last_name} disabled className={input} />
-        </div>
-        <div>
-          <label className={label}>First name</label>
-          <input value={student.first_name} disabled className={input} />
-        </div>
-        <div>
-          <label className={label}>Middle name</label>
-          <input value={student.middle_name ?? ""} disabled className={input} />
-        </div>
-        <div>
-          <label className={label}>Student Number</label>
-          <input value={student.student_number} disabled className={input} />
-        </div>
-        <div>
-          <label className={label}>Year & Section</label>
-          <input value={student.section} disabled className={input} />
-        </div>
-        <div>
-          <label className={label}>Program</label>
-          <input value={student.program} disabled className={input} />
-        </div>
-        <div className="sm:col-span-3">
-          <label className={label}>Institute</label>
-          <input value={student.institute} disabled className={input} />
-        </div>
-      </fieldset>
-
-      <div>
-        <span className={label}>
-          Type of Concern <span className="text-destructive">*</span>
-        </span>
-        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
-          {(["Complaint", "Question", "Suggestion"] as const).map((t) => (
-            <label key={t} className="inline-flex items-center gap-2 text-sm py-1.5">
-              <input
-                type="radio"
-                name="type"
-                value={t}
-                checked={type === t}
-                onChange={() => setType(t)}
-                className="accent-primary w-4 h-4"
-              />
-              {t}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className={label}>
-          Message <span className="text-destructive">*</span>
-        </label>
-        <textarea
-          required
-          name="message"
-          rows={5}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className={input}
-          placeholder="Describe your concern in detail..."
-          maxLength={MAX_MESSAGE_LENGTH}
-        />
-        {message.length > 0 && (
-          <div className="mt-1 flex justify-end">
-            <span
-              className={`text-xs ${
-                message.length >= MAX_MESSAGE_LENGTH
-                  ? "text-destructive font-medium"
-                  : "text-muted-foreground"
-              }`}
-            >
-              {message.length}/{MAX_MESSAGE_LENGTH}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Data Privacy Act (RA 10173) consent */}
-      <div className="rounded-md border border-border bg-muted/40 p-4">
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-primary shrink-0"
-          />
-          <span className="text-sm text-muted-foreground leading-relaxed">
-            I consent to the collection and processing of my personal information (name, student
-            number, section, program, and concern details) by Colegio de Montalban for the sole
-            purpose of addressing my concern, in accordance with the Data Privacy Act of 2012
-            (RA 10173). <span className="text-destructive">*</span>
-          </span>
-        </label>
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={busy}
-          className="bg-primary text-primary-foreground px-6 py-2.5 rounded-md font-semibold hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {busy ? "Submitting..." : "Submit Concern"}
-        </button>
-      </div>
-    </form>
   );
 }
