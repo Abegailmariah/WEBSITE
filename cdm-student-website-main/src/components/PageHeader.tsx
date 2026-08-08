@@ -18,7 +18,7 @@ export function PageHeader({ title, subtitle, badge }: PageHeaderProps) {
           {badge}
         </span>
       )}
-      <h1 className="text-3xl font-bold text-primary">{title}</h1>
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight">{title}</h1>
       {subtitle && <p className="text-muted-foreground mt-1 max-w-2xl">{subtitle}</p>}
     </header>
   );

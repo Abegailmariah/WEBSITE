@@ -17,6 +17,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -53,23 +55,27 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.97 0.005 90);
+  --radius: 0.75rem;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --background: oklch(0.975 0.008 90);
   --foreground: oklch(0.2 0.02 20);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.02 20);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.02 20);
   /* Navy Green */
-  --primary: oklch(0.30 0.055 185);
+  --primary: oklch(0.29 0.06 185);
   --primary-foreground: oklch(0.97 0.02 170);
   /* Yellow highlight */
-  --secondary: oklch(0.86 0.17 95);
-  --secondary-foreground: oklch(0.25 0.05 185);
-  --muted: oklch(0.95 0.005 90);
-  --muted-foreground: oklch(0.45 0.02 25);
-  --accent: oklch(0.86 0.17 95);
-  --accent-foreground: oklch(0.25 0.05 185);
+  --secondary: oklch(0.87 0.17 95);
+  --secondary-foreground: oklch(0.24 0.05 185);
+  --muted: oklch(0.95 0.008 90);
+  --muted-foreground: oklch(0.44 0.02 25);
+  --accent: oklch(0.87 0.17 95);
+  --accent-foreground: oklch(0.24 0.05 185);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.9 0.03 185);
@@ -82,7 +88,7 @@
   --chart-5: oklch(0.72 0.14 95);
   --sidebar: oklch(0.984 0.003 247.858);
   --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.30 0.055 185);
+  --sidebar-primary: oklch(0.29 0.06 185);
   --sidebar-primary-foreground: oklch(0.97 0.02 170);
   --sidebar-accent: oklch(0.9 0.1 95);
   --sidebar-accent-foreground: oklch(0.3 0.055 185);
@@ -95,8 +101,97 @@
     border-color: var(--color-border);
   }
 
-body {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
     background-color: var(--color-background);
+    background-image: radial-gradient(
+        ellipse 80% 50% at 50% -20%,
+        oklch(0.87 0.17 95 / 0.14),
+        transparent
+      );
+    background-attachment: fixed;
     color: var(--color-foreground);
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background-color: oklch(0.87 0.17 95 / 0.4);
+    color: var(--foreground);
+  }
+
+  /* Refined focus ring for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Reusable button styles for consistent, modern buttons */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: calc(var(--radius) - 2px);
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px oklch(0.29 0.06 185 / 0.5);
+  }
+  .btn-secondary {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+  .btn-secondary:hover {
+    filter: brightness(0.96);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px oklch(0.87 0.17 95 / 0.6);
+  }
+  .btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+  .btn-outline:hover {
+    background-color: var(--muted);
+  }
+
+  /* Card hover lift used across announcement/feature cards */
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px -12px oklch(0.2 0.02 20 / 0.25);
+    border-color: oklch(0.8 0.06 185);
   }
 }

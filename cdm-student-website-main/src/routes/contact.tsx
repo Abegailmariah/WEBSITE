@@ -58,10 +58,10 @@ function ContactPage() {
         </p>
       </header>
 
-      {/* Contact cards */}
+{/* Contact cards */}
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
         {contactCards.map((card) => (
-          <div key={card.title} className="bg-card border rounded-lg p-5 shadow-sm">
+          <div key={card.title} className="bg-card border rounded-xl p-5 shadow-sm card-hover">
             <div className="text-2xl mb-2">{card.icon}</div>
             <h2 className="font-semibold text-foreground">{card.title}</h2>
             {card.lines.map((line, i) => (

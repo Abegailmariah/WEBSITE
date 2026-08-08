@@ -103,19 +103,32 @@ function Index() {
 
   return (
     <div className="min-h-[calc(100vh-64px)]">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
+{/* Hero */}
+      <section className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground relative overflow-hidden">
         {/* Decorative blobs */}
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-secondary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-primary-foreground/10 blur-3xl" />
+        {/* Subtle grid pattern overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
 
-        <div className="max-w-6xl mx-auto px-4 py-14 sm:py-20 relative">
-          <div className="grid gap-8 lg:grid-cols-2 items-center">
+        <div className="max-w-6xl mx-auto px-4 py-16 sm:py-24 relative">
+          <div className="grid gap-10 lg:grid-cols-2 items-center">
             <div className="text-center lg:text-left">
-              <span className="inline-block bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-semibold mb-4">
+              <span className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-semibold mb-5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary-foreground opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary-foreground" />
+                </span>
                 Colegio de Montalban
               </span>
-              <h1 className="text-3xl sm:text-5xl font-bold text-white">
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
                 Welcome, CdM Student
               </h1>
               <p className="mt-4 text-base sm:text-lg text-secondary/90 max-w-2xl mx-auto lg:mx-0">
@@ -125,13 +138,28 @@ function Index() {
               <div className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start">
                 <Link
                   to="/announcements"
-                  className="bg-secondary text-secondary-foreground px-6 py-3 rounded-md font-semibold hover:brightness-95 transition"
+                  className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground px-6 py-3 rounded-md font-semibold hover:brightness-95 hover:-translate-y-0.5 transition-all shadow-lg shadow-secondary/25"
                 >
                   View Announcements
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
                 </Link>
                 <Link
                   to="/submit-concern"
-                  className="bg-white/10 border border-white/30 text-white px-6 py-3 rounded-md font-semibold hover:bg-white/20 transition"
+                  className="inline-flex items-center gap-2 bg-white/10 border border-white/30 text-white px-6 py-3 rounded-md font-semibold hover:bg-white/20 hover:-translate-y-0.5 transition-all"
                 >
                   Submit a Concern
                 </Link>
@@ -140,16 +168,16 @@ function Index() {
 
             {/* Stats / illustration panel */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/10 border border-white/20 rounded-lg p-5 backdrop-blur-sm">
-                <div className="text-3xl font-bold text-white">{announcements.length}</div>
+              <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm">
+                <div className="text-3xl font-extrabold text-white">{announcements.length}</div>
                 <p className="text-sm text-secondary/80 mt-1">Active Announcements</p>
               </div>
-              <div className="bg-white/10 border border-white/20 rounded-lg p-5 backdrop-blur-sm">
-                <div className="text-3xl font-bold text-white">{criticalCount}</div>
+              <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm">
+                <div className="text-3xl font-extrabold text-white">{criticalCount}</div>
                 <p className="text-sm text-secondary/80 mt-1">Critical Alerts</p>
               </div>
-              <div className="bg-white/10 border border-white/20 rounded-lg p-5 backdrop-blur-sm col-span-2">
-                <div className="text-xl font-semibold text-white">3 Institutes Supported</div>
+              <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm col-span-2">
+                <div className="text-xl font-bold text-white">3 Institutes Supported</div>
                 <p className="text-sm text-secondary/80 mt-1">
                   ICS, IBE, and ITE — concerns routed to the right office.
                 </p>
@@ -203,9 +231,9 @@ function Index() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {latest.map((a) => (
-              <article
+<article
                 key={a.id}
-                className="bg-card border rounded-lg p-5 shadow-sm flex flex-col hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
+                className="bg-card border rounded-xl p-5 shadow-sm flex flex-col card-hover"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">{a.date}</span>
@@ -231,12 +259,12 @@ function Index() {
       </section>
 
 <section className="max-w-6xl mx-auto px-4 pb-16 grid gap-6 md:grid-cols-3">
-        {features.map((f) => (
+{features.map((f) => (
           <div
             key={f.t}
-            className="bg-card rounded-lg p-6 shadow-sm border hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
+            className="bg-card rounded-xl p-6 shadow-sm border card-hover"
           >
-            <div className="w-10 h-10 rounded-md bg-secondary text-secondary-foreground flex items-center justify-center font-bold mb-3">
+            <div className="w-11 h-11 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center font-bold mb-3 shadow-sm">
               {f.icon}
             </div>
             <h3 className="font-semibold text-lg">{f.t}</h3>

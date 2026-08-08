@@ -406,7 +406,7 @@ function StudentPage() {
 
       {/* My Profile */}
       <section className="mb-8">
-        <div className="bg-card border rounded-lg shadow-sm p-6">
+        <div className="bg-card border rounded-xl shadow-sm p-6">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold shrink-0">
               {student.first_name.charAt(0)}

@@ -195,9 +195,9 @@ return (
           aria-label="All announcements list"
         >
 {filtered.map((a) => (
-            <article
+<article
               key={a.id}
-              className="bg-card border rounded-lg p-5 shadow-sm flex flex-col hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
+              className="bg-card border rounded-xl p-5 shadow-sm flex flex-col card-hover"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">{a.date}</span>
@@ -229,9 +229,9 @@ return (
         </div>
       )}
 
-      {open && (
+{open && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in-0 duration-200"
           onClick={() => setOpen(null)}
           onKeyDown={handleModalKeyDown}
           role="dialog"
@@ -241,7 +241,7 @@ return (
         >
           <div
             ref={modalRef}
-            className="bg-card rounded-lg max-w-lg w-full p-6 shadow-xl my-auto"
+            className="bg-card rounded-xl max-w-lg w-full p-6 shadow-2xl my-auto animate-in zoom-in-95 fade-in-0 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-2">
