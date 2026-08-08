@@ -138,6 +138,8 @@ function StudentPage() {
     queryKey: ["student-announcements"],
     queryFn: fetchStudentAnnouncements,
     enabled: !!student,
+    refetchInterval: 60_000, // Live polling: refresh every 60s
+    refetchIntervalInBackground: false,
   });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {

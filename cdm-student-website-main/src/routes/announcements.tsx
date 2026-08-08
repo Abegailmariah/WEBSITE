@@ -37,6 +37,8 @@ function AnnouncementsPage() {
     queryFn: () => fetchAnnouncements(sort),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
+    refetchInterval: 60_000, // Live polling: refresh every 60s
+    refetchIntervalInBackground: false,
   });
 
   // Focus trap: lock focus inside modal while open, restore on close

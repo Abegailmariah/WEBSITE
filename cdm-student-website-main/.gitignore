@@ -21,6 +21,18 @@ dist-ssr
 .nitro
 *.local
 
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+backend/*.db
+
+# TypeScript / build output text files
+tsc-output*.txt
+tsc_check.txt
+*.tsbuildinfo
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

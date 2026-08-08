@@ -94,6 +94,8 @@ function Index() {
     queryFn: () => fetchAnnouncements(),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
+    refetchInterval: 60_000, // Live polling: refresh every 60s
+    refetchIntervalInBackground: false,
   });
 
   const latest = announcements.slice(0, 3);
