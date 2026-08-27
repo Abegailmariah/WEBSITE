@@ -17,7 +17,6 @@ const quickLinks = [
   { to: "/", label: "Home" },
   { to: "/announcements", label: "Announcements" },
   { to: "/submit-concern", label: "Submit Concern" },
-  { to: "/student", label: "Student Dashboard" },
   { to: "/contact", label: "About Us" },
 ];
 
