@@ -58,10 +58,12 @@ function toPublicStudent(student: {
 // POST /student/register — create a student account
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { studentNumber, last, first, middle, section, institute, program, password } = req.body ?? {};
+    const { studentNumber, last, first, middle, section, institute, program, password } =
+      req.body ?? {};
 
     const errors: string[] = [];
-    if (!studentNumber || typeof studentNumber !== "string") errors.push("studentNumber is required");
+    if (!studentNumber || typeof studentNumber !== "string")
+      errors.push("studentNumber is required");
     if (!last || typeof last !== "string") errors.push("last is required");
     if (!first || typeof first !== "string") errors.push("first is required");
     if (!section || typeof section !== "string") errors.push("section is required");
@@ -69,7 +71,8 @@ router.post("/register", async (req: Request, res: Response) => {
     if (!program || typeof program !== "string") errors.push("program is required");
     if (!password || typeof password !== "string") errors.push("password is required");
     if (password && password.length < 8) errors.push("password must be at least 8 characters");
-    if (password && !/[a-zA-Z]/.test(password)) errors.push("password must contain at least one letter");
+    if (password && !/[a-zA-Z]/.test(password))
+      errors.push("password must contain at least one letter");
     if (password && !/\d/.test(password)) errors.push("password must contain at least one number");
     if (studentNumber && !/^\d{2}-\d{5}$/.test(String(studentNumber).trim()))
       errors.push("studentNumber must match format YY-NNNNN (e.g., 24-00123)");
@@ -121,12 +124,17 @@ router.post("/login", async (req: Request, res: Response) => {
     // Account lockout check before attempting verification.
     if (isStudentLocked(studentNumberTrim)) {
       const remaining = Math.ceil(getLockoutRemaining(studentNumberTrim) / 1000);
-      res.status(429).json({ error: `Account temporarily locked. Try again in ${remaining} seconds.` });
+      res
+        .status(429)
+        .json({ error: `Account temporarily locked. Try again in ${remaining} seconds.` });
       return;
     }
 
     const student = await getStudentByStudentNumber(studentNumberTrim);
-    const valid = !!student && !!student.password_hash && verifyPassword(String(password), student.password_hash);
+    const valid =
+      !!student &&
+      !!student.password_hash &&
+      verifyPassword(String(password), student.password_hash);
 
     if (!valid) {
       recordFailedAttempt(studentNumberTrim);
@@ -191,12 +199,15 @@ router.get("/concerns", requireStudent, async (req: Request, res: Response) => {
 // characters, then trim. This is a deliberately conservative sanitizer for
 // plain-text storage.
 function sanitize(str: string): string {
-  return String(str)
-    .replace(/<[^>]*>/g, "") // Strip HTML tags
-    .replace(/[<>]/g, "") // Remove any remaining angle brackets
-    .replace(/&[a-zA-Z0-9#]+;/g, "") // Strip HTML entities (&amp; < &#123; etc.)
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "") // Strip control chars
-    .trim();
+  return (
+    String(str)
+      .replace(/<[^>]*>/g, "") // Strip HTML tags
+      .replace(/[<>]/g, "") // Remove any remaining angle brackets
+      .replace(/&[a-zA-Z0-9#]+;/g, "") // Strip HTML entities (&amp; < &#123; etc.)
+      // eslint-disable-next-line no-control-regex -- intentionally stripping control characters
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "") // Strip control chars
+      .trim()
+  );
 }
 
 const MAX_MESSAGE_LENGTH = 2000;

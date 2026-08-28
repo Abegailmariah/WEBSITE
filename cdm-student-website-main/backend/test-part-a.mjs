@@ -37,7 +37,10 @@ async function main() {
     headers,
     body: JSON.stringify({ type: "Question", message: "Hello", consent: false }),
   });
-  assert(noConsentRes.status === 400, "missing consent returns 400 (got " + noConsentRes.status + ")");
+  assert(
+    noConsentRes.status === 400,
+    "missing consent returns 400 (got " + noConsentRes.status + ")",
+  );
   const noConsentData = await noConsentRes.json();
   assert(
     Array.isArray(noConsentData.errors) && noConsentData.errors.some((e) => e.includes("consent")),
@@ -76,4 +79,3 @@ main().catch((err) => {
   console.error("ERROR:", err);
   process.exitCode = 1;
 });
-

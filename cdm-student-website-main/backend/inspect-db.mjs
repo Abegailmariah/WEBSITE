@@ -31,4 +31,3 @@ function printTable(query, label) {
 printTable("SELECT name FROM sqlite_master WHERE type='table'", "Tables");
 printTable("SELECT * FROM announcements ORDER BY id", "Announcements");
 printTable("SELECT * FROM concerns ORDER BY id", "Concerns");
-

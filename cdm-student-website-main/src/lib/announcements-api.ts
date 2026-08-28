@@ -79,7 +79,9 @@ const fallbackAnnouncements: Announcement[] = [
   },
 ];
 
-export async function fetchAnnouncements(sort: "newest" | "oldest" = "newest"): Promise<Announcement[]> {
+export async function fetchAnnouncements(
+  sort: "newest" | "oldest" = "newest",
+): Promise<Announcement[]> {
   const endpoint = getAnnouncementsEndpoint();
   const params = new URLSearchParams({ sort });
   const url = `${endpoint}?${params.toString()}`;
@@ -130,9 +132,7 @@ export async function fetchAnnouncementsPage(
   return res.json() as Promise<AnnouncementsResponse>;
 }
 
-export async function createAnnouncement(
-  announcement: NewAnnouncement,
-): Promise<Announcement> {
+export async function createAnnouncement(announcement: NewAnnouncement): Promise<Announcement> {
   const endpoint = getAnnouncementsEndpoint();
 
   const res = await fetch(endpoint, {
@@ -149,9 +149,10 @@ export async function createAnnouncement(
     } catch {
       // ignore
     }
-    throw new Error(`Failed to create announcement: HTTP ${res.status}${details ? ` - ${details}` : ""}`);
+    throw new Error(
+      `Failed to create announcement: HTTP ${res.status}${details ? ` - ${details}` : ""}`,
+    );
   }
 
   return res.json() as Promise<Announcement>;
 }
-

@@ -42,7 +42,9 @@ function AdminPage() {
   const [checked, setChecked] = useState(false);
   if (!checked) {
     setChecked(true);
-    void checkAdminSession().then(setAuthed).catch(() => setAuthed(false));
+    void checkAdminSession()
+      .then(setAuthed)
+      .catch(() => setAuthed(false));
   }
 
   if (authed === null) {
@@ -70,10 +72,7 @@ function AdminPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            to="/"
-            className="text-sm text-primary font-medium hover:underline"
-          >
+          <Link to="/" className="text-sm text-primary font-medium hover:underline">
             ← Back to site
           </Link>
           <button
@@ -177,7 +176,8 @@ function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
         </form>
 
         <p className="mt-4 text-xs text-muted-foreground text-center">
-          Default PIN: <code className="bg-muted px-1 py-0.5 rounded">admin123</code> (configurable via ADMIN_PIN env)
+          Default PIN: <code className="bg-muted px-1 py-0.5 rounded">admin123</code> (configurable
+          via ADMIN_PIN env)
         </p>
       </div>
     </div>
@@ -310,7 +310,13 @@ function AnnouncementsTab() {
     try {
       await deleteAnnouncement(id);
       setResponse((prev) =>
-        prev ? { ...prev, data: prev.data.filter((a) => a.id !== id), total: Math.max(0, prev.total - 1) } : prev,
+        prev
+          ? {
+              ...prev,
+              data: prev.data.filter((a) => a.id !== id),
+              total: Math.max(0, prev.total - 1),
+            }
+          : prev,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete announcement");
@@ -319,9 +325,8 @@ function AnnouncementsTab() {
     }
   };
 
-  const filtered = response?.data.filter((a) =>
-    a.title.toLowerCase().includes(search.toLowerCase()),
-  ) ?? [];
+  const filtered =
+    response?.data.filter((a) => a.title.toLowerCase().includes(search.toLowerCase())) ?? [];
 
   const items = response?.data ?? [];
 
@@ -355,7 +360,9 @@ function AnnouncementsTab() {
       {showForm && (
         <NewAnnouncementForm
           onCreated={(a) => {
-            setResponse((prev) => (prev ? { ...prev, data: [a, ...prev.data], total: prev.total + 1 } : prev));
+            setResponse((prev) =>
+              prev ? { ...prev, data: [a, ...prev.data], total: prev.total + 1 } : prev,
+            );
             setShowForm(false);
           }}
         />
@@ -368,7 +375,10 @@ function AnnouncementsTab() {
           onUpdated={(updated) => {
             setResponse((prev) =>
               prev
-                ? { ...prev, data: prev.data.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)) }
+                ? {
+                    ...prev,
+                    data: prev.data.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)),
+                  }
                 : prev,
             );
             setEditing(null);
@@ -411,7 +421,10 @@ function AnnouncementsTab() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => { setEditing(a); setShowForm(false); }}
+                  onClick={() => {
+                    setEditing(a);
+                    setShowForm(false);
+                  }}
                   disabled={busy}
                   className="text-xs text-primary border border-primary/30 rounded-md px-2.5 py-1.5 hover:bg-primary/10 transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
@@ -482,18 +495,36 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
     "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
 
   return (
-    <form onSubmit={onSubmit} className="bg-card border rounded-lg p-5 mb-6 grid gap-4 sm:grid-cols-2">
+    <form
+      onSubmit={onSubmit}
+      className="bg-card border rounded-lg p-5 mb-6 grid gap-4 sm:grid-cols-2"
+    >
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
-        <input required value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
+        <input
+          required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={input}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Date *</label>
-        <input required value={date} onChange={(e) => setDate(e.target.value)} className={input} placeholder="e.g. Nov 20, 2025" />
+        <input
+          required
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className={input}
+          placeholder="e.g. Nov 20, 2025"
+        />
       </div>
       <div className="sm:col-span-2">
         <label className="block text-sm font-medium text-foreground mb-1">Priority</label>
-        <select value={priority} onChange={(e) => setPriority(e.target.value as "Critical" | "Normal")} className={input}>
+        <select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as "Critical" | "Normal")}
+          className={input}
+        >
           <option value="Normal">Normal</option>
           <option value="Critical">Critical</option>
         </select>
@@ -563,18 +594,36 @@ function EditAnnouncementForm({
   };
 
   return (
-    <form onSubmit={onSubmit} className="bg-card border rounded-lg p-5 mb-6 grid gap-4 sm:grid-cols-2">
+    <form
+      onSubmit={onSubmit}
+      className="bg-card border rounded-lg p-5 mb-6 grid gap-4 sm:grid-cols-2"
+    >
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
-        <input required value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
+        <input
+          required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={input}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">Date *</label>
-        <input required value={date} onChange={(e) => setDate(e.target.value)} className={input} placeholder="e.g. Nov 20, 2025" />
+        <input
+          required
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className={input}
+          placeholder="e.g. Nov 20, 2025"
+        />
       </div>
       <div className="sm:col-span-2">
         <label className="block text-sm font-medium text-foreground mb-1">Priority</label>
-        <select value={priority} onChange={(e) => setPriority(e.target.value as "Critical" | "Normal")} className={input}>
+        <select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as "Critical" | "Normal")}
+          className={input}
+        >
           <option value="Normal">Normal</option>
           <option value="Critical">Critical</option>
         </select>
@@ -622,7 +671,12 @@ function EditAnnouncementForm({
 
 function ConcernsTab() {
   const [page, setPage] = useState(1);
-  const [response, setResponse] = useState<{ data: AdminConcern[]; total: number; page: number; totalPages: number } | null>(null);
+  const [response, setResponse] = useState<{
+    data: AdminConcern[];
+    total: number;
+    page: number;
+    totalPages: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"All" | "Pending" | "Read" | "Resolved">("All");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -695,7 +749,11 @@ function ConcernsTab() {
       await deleteConcern(id);
       setResponse((prev) =>
         prev
-          ? { ...prev, data: prev.data.filter((c) => c.id !== id), total: Math.max(0, prev.total - 1) }
+          ? {
+              ...prev,
+              data: prev.data.filter((c) => c.id !== id),
+              total: Math.max(0, prev.total - 1),
+            }
           : prev,
       );
     } catch (err) {
@@ -794,7 +852,6 @@ function ConcernsTab() {
                     {c.student_number} • {c.section} • {c.program}
                   </p>
                   <p className="text-xs text-muted-foreground">{c.institute}</p>
-
                 </div>
                 <div className="flex items-center gap-2">
                   <span
@@ -817,7 +874,9 @@ function ConcernsTab() {
               {c.response && (
                 <div className="mt-3 rounded-md border border-border bg-muted/40 p-3">
                   <p className="text-xs font-semibold text-foreground">Response:</p>
-                  <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-line">{c.response}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-line">
+                    {c.response}
+                  </p>
                 </div>
               )}
 
@@ -840,7 +899,10 @@ function ConcernsTab() {
                 ))}
 
                 <button
-                  onClick={() => { setReplyId(replyId === c.id ? null : c.id); setReplyText(c.response ?? ""); }}
+                  onClick={() => {
+                    setReplyId(replyId === c.id ? null : c.id);
+                    setReplyText(c.response ?? "");
+                  }}
                   disabled={busyId === c.id}
                   className="text-xs text-primary border border-primary/30 rounded-md px-2.5 py-1.5 hover:bg-primary/10 transition-colors disabled:opacity-50"
                 >
@@ -981,4 +1043,3 @@ function AuditTab() {
     </div>
   );
 }
-

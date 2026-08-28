@@ -165,11 +165,23 @@ function SubmitConcernPage() {
             <label className={label}>
               Student Number <span className="text-destructive">*</span>
             </label>
-            <input required name="studentNumber" className={input} placeholder="e.g. 24-00000" maxLength={8} />
+            <input
+              required
+              name="studentNumber"
+              className={input}
+              placeholder="e.g. 24-00000"
+              maxLength={8}
+            />
           </div>
           <div>
             <label className={label}>Year & Section</label>
-            <input required name="section" className={input} placeholder="e.g. 4-A" maxLength={120} />
+            <input
+              required
+              name="section"
+              className={input}
+              placeholder="e.g. 4-A"
+              maxLength={120}
+            />
           </div>
         </div>
 
@@ -211,7 +223,13 @@ function SubmitConcernPage() {
           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
             {["Complaint", "Question", "Suggestion"].map((t) => (
               <label key={t} className="inline-flex items-center gap-2 text-sm py-1.5">
-                <input type="radio" required name="type" value={t} className="accent-primary w-4 h-4" />
+                <input
+                  type="radio"
+                  required
+                  name="type"
+                  value={t}
+                  className="accent-primary w-4 h-4"
+                />
                 {t}
               </label>
             ))}
@@ -257,8 +275,8 @@ function SubmitConcernPage() {
             <span className="text-sm text-muted-foreground leading-relaxed">
               I consent to the collection and processing of my personal information (name, student
               number, section, program, and concern details) by Colegio de Montalban for the sole
-              purpose of addressing my concern, in accordance with the Data Privacy Act of 2012
-              (RA 10173). <span className="text-destructive">*</span>
+              purpose of addressing my concern, in accordance with the Data Privacy Act of 2012 (RA
+              10173). <span className="text-destructive">*</span>
             </span>
           </label>
         </div>

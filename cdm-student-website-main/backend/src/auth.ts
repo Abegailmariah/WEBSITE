@@ -86,4 +86,3 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   (req as Request & { adminToken?: string }).adminToken = token;
   next();
 }
-

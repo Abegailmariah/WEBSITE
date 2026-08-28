@@ -4,7 +4,7 @@ import { useState } from "react";
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-const linkCls =
+  const linkCls =
     "text-secondary hover:text-white transition-colors font-medium px-3 py-2 rounded-md";
   const activeCls = "bg-white/10 text-white";
 

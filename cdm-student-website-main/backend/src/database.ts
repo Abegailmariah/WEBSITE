@@ -92,7 +92,7 @@ function initializeSchema(database: SqlJsDatabase): void {
     )
   `);
 
-database.run(`
+  database.run(`
     CREATE TABLE IF NOT EXISTS audit_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       action TEXT NOT NULL,
@@ -120,8 +120,7 @@ database.run(`
 // Lightweight migrations that add columns/tables without dropping data.
 function runMigrations(database: SqlJsDatabase): void {
   const cols = database.exec("PRAGMA table_info(concerns)");
-  const existing: string[] =
-    cols.length > 0 ? cols[0].values.map((row) => String(row[1])) : [];
+  const existing: string[] = cols.length > 0 ? cols[0].values.map((row) => String(row[1])) : [];
 
   if (!existing.includes("email")) {
     database.run("ALTER TABLE concerns ADD COLUMN email TEXT");
@@ -216,10 +215,9 @@ function seedStudentsIfEmpty(database: SqlJsDatabase): void {
     password_hash: hashPassword("student123"),
   };
 
-  const existing = database.exec(
-    "SELECT id FROM students WHERE student_number = ?",
-    [demo.student_number],
-  );
+  const existing = database.exec("SELECT id FROM students WHERE student_number = ?", [
+    demo.student_number,
+  ]);
 
   if (existing.length > 0 && existing[0].values.length > 0) {
     // Update the existing demo account to the documented credentials.
@@ -284,7 +282,9 @@ export async function getAllAnnouncements(
   page?: number,
   limit?: number,
   sort: "newest" | "oldest" = "newest",
-): Promise<Announcement[] | { data: Announcement[]; total: number; page: number; totalPages: number }> {
+): Promise<
+  Announcement[] | { data: Announcement[]; total: number; page: number; totalPages: number }
+> {
   const database = await getDatabase();
   const order = sort === "oldest" ? "ASC" : "DESC";
 
@@ -428,10 +428,18 @@ export async function updateConcernStatus(
 }
 
 // Update both status and optional response in one operation.
-export async function updateConcern(id: number, status: string, response?: string): Promise<Concern | null> {
+export async function updateConcern(
+  id: number,
+  status: string,
+  response?: string,
+): Promise<Concern | null> {
   const database = await getDatabase();
   if (response !== undefined) {
-    database.run("UPDATE concerns SET status = ?, response = ? WHERE id = ?", [status, response, id]);
+    database.run("UPDATE concerns SET status = ?, response = ? WHERE id = ?", [
+      status,
+      response,
+      id,
+    ]);
   } else {
     database.run("UPDATE concerns SET status = ? WHERE id = ?", [status, id]);
   }
@@ -483,7 +491,9 @@ export async function getStats(): Promise<{
 
   const annResult = database.exec("SELECT COUNT(*) as cnt FROM announcements");
   const concernsResult = database.exec("SELECT COUNT(*) as cnt FROM concerns");
-  const pendingResult = database.exec("SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Pending'");
+  const pendingResult = database.exec(
+    "SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Pending'",
+  );
   const readResult = database.exec("SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Read'");
   const resolvedResult = database.exec(
     "SELECT COUNT(*) as cnt FROM concerns WHERE status = 'Resolved'",
@@ -512,10 +522,7 @@ export async function addAuditLog(action: string, detail?: string): Promise<void
 export async function getAuditLog(limit: number = 50): Promise<AuditLog[]> {
   const database = await getDatabase();
   const safeLimit = Math.min(200, Math.max(1, limit));
-  const results = database.exec(
-    "SELECT * FROM audit_log ORDER BY id DESC LIMIT ?",
-    [safeLimit],
-  );
+  const results = database.exec("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", [safeLimit]);
   return rowsToObjects<AuditLog>(results);
 }
 
@@ -535,9 +542,7 @@ export async function getStudentById(id: number): Promise<Student | null> {
   return students[0] ?? null;
 }
 
-export async function createStudent(
-  student: Omit<Student, "id" | "created_at">,
-): Promise<Student> {
+export async function createStudent(student: Omit<Student, "id" | "created_at">): Promise<Student> {
   const database = await getDatabase();
   database.run(
     `INSERT INTO students (student_number, last_name, first_name, middle_name, section, institute, program, password_hash)

@@ -27,10 +27,10 @@ const resources = [
 
 export function Footer() {
   return (
-<footer className="bg-primary text-primary-foreground mt-auto relative">
+    <footer className="bg-primary text-primary-foreground mt-auto relative">
       {/* Top accent border */}
       <div className="h-1 w-full bg-gradient-to-r from-secondary via-secondary/60 to-secondary" />
-<div className="max-w-6xl mx-auto px-4 py-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="max-w-6xl mx-auto px-4 py-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* School info */}
         <div className="sm:col-span-2 lg:col-span-1">
           <div className="flex items-center gap-3">
@@ -92,7 +92,14 @@ export function Footer() {
               aria-label="Colegio de Montalban on Facebook"
               className="inline-flex items-center gap-2 rounded-md bg-white/10 px-2.5 py-1.5 text-xs text-white hover:bg-white/20 transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
                 <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z" />
               </svg>
               Facebook

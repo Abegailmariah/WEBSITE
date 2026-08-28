@@ -197,4 +197,3 @@ export function deleteAnnouncement(id: number): Promise<{ ok: boolean; id: numbe
 export function fetchAuditLog(limit: number = 50): Promise<AuditLogEntry[]> {
   return request<AuditLogEntry[]>(`/audit?limit=${limit}`);
 }
-

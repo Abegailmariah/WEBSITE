@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import type { Request, Response, NextFunction } from "express";
 
-const SESSION_TTL_MS = parseInt(process.env.STUDENT_SESSION_TTL_MS ?? String(12 * 60 * 60 * 1000), 10); // 12h
+const SESSION_TTL_MS = parseInt(
+  process.env.STUDENT_SESSION_TTL_MS ?? String(12 * 60 * 60 * 1000),
+  10,
+); // 12h
 
 // In-memory session store. Tokens are invalidated on server restart.
 const sessions = new Map<string, { studentId: number; expiresAt: number }>();

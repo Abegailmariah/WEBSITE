@@ -4,9 +4,15 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact — CdM Student Portal" },
-      { name: "description", content: "Contact information and office directory for Colegio de Montalban." },
+      {
+        name: "description",
+        content: "Contact information and office directory for Colegio de Montalban.",
+      },
       { property: "og:title", content: "Contact — CdM Student Portal" },
-      { property: "og:description", content: "Contact information and office directory for Colegio de Montalban." },
+      {
+        property: "og:description",
+        content: "Contact information and office directory for Colegio de Montalban.",
+      },
     ],
   }),
   component: ContactPage,
@@ -16,8 +22,12 @@ const contactCards = [
   {
     icon: "📍",
     title: "Address",
-    lines: ["Colegio de Montalban", "Kasiglahan Village, Rodriguez, Philippines, 1860", "(Montalban), Rizal, Philippines"],
-},
+    lines: [
+      "Colegio de Montalban",
+      "Kasiglahan Village, Rodriguez, Philippines, 1860",
+      "(Montalban), Rizal, Philippines",
+    ],
+  },
   {
     icon: "👍",
     title: "Facebook",
@@ -53,12 +63,12 @@ function ContactPage() {
         </span>
         <h1 className="text-3xl font-bold text-primary">Contact Us</h1>
         <p className="text-muted-foreground mt-1 max-w-2xl">
-          Reach out to the school or find the right office for your concerns.
-          You can also submit your concerns directly through the portal.
+          Reach out to the school or find the right office for your concerns. You can also submit
+          your concerns directly through the portal.
         </p>
       </header>
 
-{/* Contact cards */}
+      {/* Contact cards */}
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
         {contactCards.map((card) => (
           <div key={card.title} className="bg-card border rounded-xl p-5 shadow-sm card-hover">
@@ -88,14 +98,14 @@ function ContactPage() {
         <div className="bg-card border rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-bold text-foreground mb-3">About the School</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Colegio de Montalban (CdM) is a public institution in Rodriguez
-            (Montalban), Rizal, committed to providing accessible, quality
-            tertiary education to the youth of the municipality and beyond.
+            Colegio de Montalban (CdM) is a public institution in Rodriguez (Montalban), Rizal,
+            committed to providing accessible, quality tertiary education to the youth of the
+            municipality and beyond.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-            Through this student portal, we aim to keep students informed with
-            official announcements and provide a direct channel for submitting
-            concerns to the appropriate institute or office.
+            Through this student portal, we aim to keep students informed with official
+            announcements and provide a direct channel for submitting concerns to the appropriate
+            institute or office.
           </p>
         </div>
       </section>
@@ -129,8 +139,8 @@ function ContactPage() {
       <section className="rounded-lg bg-primary text-primary-foreground p-8 text-center">
         <h2 className="text-xl font-bold text-white">Need help with something?</h2>
         <p className="mt-2 text-secondary/90 text-sm max-w-xl mx-auto">
-          Submit a complaint, question, or suggestion directly to your institute
-          and we'll make sure it reaches the right office.
+          Submit a complaint, question, or suggestion directly to your institute and we'll make sure
+          it reaches the right office.
         </p>
         <Link
           to="/submit-concern"

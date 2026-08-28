@@ -60,14 +60,11 @@ function AnnouncementsPage() {
     }
   }
 
-// Loading skeleton
+  // Loading skeleton
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <PageHeader
-          title="Announcements"
-          subtitle="Official updates from Colegio de Montalban."
-        />
+        <PageHeader title="Announcements" subtitle="Official updates from Colegio de Montalban." />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((s) => (
             <div key={s} className="bg-card border rounded-lg p-5 shadow-sm animate-pulse">
@@ -86,14 +83,11 @@ function AnnouncementsPage() {
     );
   }
 
-// Error state
+  // Error state
   if (isError) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <PageHeader
-          title="Announcements"
-          subtitle="Official updates from Colegio de Montalban."
-        />
+        <PageHeader title="Announcements" subtitle="Official updates from Colegio de Montalban." />
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-center">
           <p className="text-destructive font-medium">Failed to load announcements.</p>
           <p className="text-sm text-muted-foreground mt-1">
@@ -110,14 +104,11 @@ function AnnouncementsPage() {
     );
   }
 
-// Empty state
+  // Empty state
   if (announcements.length === 0) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <PageHeader
-          title="Announcements"
-          subtitle="Official updates from Colegio de Montalban."
-        />
+        <PageHeader title="Announcements" subtitle="Official updates from Colegio de Montalban." />
         <EmptyState
           icon="announcement"
           title="No announcements yet"
@@ -137,12 +128,9 @@ function AnnouncementsPage() {
     return matchesSearch && matchesPriority;
   });
 
-return (
+  return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <PageHeader
-        title="Announcements"
-        subtitle="Official updates from Colegio de Montalban."
-      />
+      <PageHeader title="Announcements" subtitle="Official updates from Colegio de Montalban." />
 
       {/* Search + priority filter */}
       <div className="mb-6 flex flex-col sm:flex-row gap-3">
@@ -169,7 +157,7 @@ return (
               {p}
             </button>
           ))}
-<button
+          <button
             onClick={() => setSort((s) => (s === "newest" ? "oldest" : "newest"))}
             className="px-3 py-2 rounded-md text-xs font-medium transition-colors bg-card border text-muted-foreground hover:text-foreground"
             title="Toggle sort order"
@@ -181,7 +169,7 @@ return (
         </div>
       </div>
 
-{filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState
           icon="search"
           title="No announcements match your search"
@@ -194,8 +182,8 @@ return (
           role="region"
           aria-label="All announcements list"
         >
-{filtered.map((a) => (
-<article
+          {filtered.map((a) => (
+            <article
               key={a.id}
               className="bg-card border rounded-xl p-5 shadow-sm flex flex-col card-hover"
             >
@@ -229,7 +217,7 @@ return (
         </div>
       )}
 
-{open && (
+      {open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in-0 duration-200"
           onClick={() => setOpen(null)}

@@ -7,12 +7,15 @@ const MAX_FIELD_LENGTH = 120;
 // Strip HTML tags, encoded entities, angle brackets, and control characters,
 // then trim. Conservative sanitizer for plain-text storage.
 function sanitize(str: string): string {
-  return str
-    .replace(/<[^>]*>/g, "") // Strip HTML tags
-    .replace(/[<>]/g, "") // Remove any remaining angle brackets
-    .replace(/&[a-zA-Z0-9#]+;/g, "") // Strip HTML entities (&amp; < &#123; etc.)
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "") // Strip control chars
-    .trim();
+  return (
+    str
+      .replace(/<[^>]*>/g, "") // Strip HTML tags
+      .replace(/[<>]/g, "") // Remove any remaining angle brackets
+      .replace(/&[a-zA-Z0-9#]+;/g, "") // Strip HTML entities (&amp; < &#123; etc.)
+      // eslint-disable-next-line no-control-regex -- intentionally stripping control characters
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "") // Strip control chars
+      .trim()
+  );
 }
 
 const router = Router();
@@ -20,8 +23,18 @@ const router = Router();
 // POST /submit-concern — Submit a student concern
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { last, first, middle, studentNumber, section, institute, program, type, message, consent } =
-      req.body;
+    const {
+      last,
+      first,
+      middle,
+      studentNumber,
+      section,
+      institute,
+      program,
+      type,
+      message,
+      consent,
+    } = req.body;
 
     // Sanitize all string inputs
     const sanitized = {

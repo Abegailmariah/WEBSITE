@@ -103,7 +103,7 @@ function Index() {
 
   return (
     <div className="min-h-[calc(100vh-64px)]">
-{/* Hero */}
+      {/* Hero */}
       <section className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground relative overflow-hidden">
         {/* Decorative blobs */}
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-secondary/20 blur-3xl" />
@@ -231,7 +231,7 @@ function Index() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {latest.map((a) => (
-<article
+              <article
                 key={a.id}
                 className="bg-card border rounded-xl p-5 shadow-sm flex flex-col card-hover"
               >
@@ -258,12 +258,9 @@ function Index() {
         )}
       </section>
 
-<section className="max-w-6xl mx-auto px-4 pb-16 grid gap-6 md:grid-cols-3">
-{features.map((f) => (
-          <div
-            key={f.t}
-            className="bg-card rounded-xl p-6 shadow-sm border card-hover"
-          >
+      <section className="max-w-6xl mx-auto px-4 pb-16 grid gap-6 md:grid-cols-3">
+        {features.map((f) => (
+          <div key={f.t} className="bg-card rounded-xl p-6 shadow-sm border card-hover">
             <div className="w-11 h-11 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center font-bold mb-3 shadow-sm">
               {f.icon}
             </div>

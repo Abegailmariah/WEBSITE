@@ -99,21 +99,41 @@ router.get("/concerns/export", requireAuth, async (req: Request, res: Response) 
       // Neutralize spreadsheet formula injection (OWASP): if a cell starts
       // with =, +, -, @, tab, or CR, prefix it with a single quote.
       if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-      if (/[\",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      if (/["\n,\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
       return s;
     };
 
     const header = [
-      "id", "last_name", "first_name", "middle_name",
-      "student_number", "section", "institute", "program", "type",
-      "status", "message", "response", "created_at",
+      "id",
+      "last_name",
+      "first_name",
+      "middle_name",
+      "student_number",
+      "section",
+      "institute",
+      "program",
+      "type",
+      "status",
+      "message",
+      "response",
+      "created_at",
     ].join(",");
 
     const rows = concerns.map((c) =>
       [
-        c.id, c.last_name, c.first_name, c.middle_name,
-        c.student_number, c.section, c.institute, c.program, c.type,
-        c.status, c.message, c.response, c.created_at,
+        c.id,
+        c.last_name,
+        c.first_name,
+        c.middle_name,
+        c.student_number,
+        c.section,
+        c.institute,
+        c.program,
+        c.type,
+        c.status,
+        c.message,
+        c.response,
+        c.created_at,
       ]
         .map(escapeCsv)
         .join(","),

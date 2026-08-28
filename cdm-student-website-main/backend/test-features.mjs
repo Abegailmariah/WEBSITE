@@ -7,7 +7,11 @@ async function req(path, options = {}) {
   });
   const text = await res.text();
   let body = null;
-  try { body = JSON.parse(text); } catch { body = text; }
+  try {
+    body = JSON.parse(text);
+  } catch {
+    body = text;
+  }
   return { status: res.status, body };
 }
 
@@ -30,7 +34,11 @@ const created = await req("/submit-concern", {
     consent: true,
   }),
 });
-check("POST valid concern", created.status === 201, `status=${created.status} body=${JSON.stringify(created.body)}`);
+check(
+  "POST valid concern",
+  created.status === 201,
+  `status=${created.status} body=${JSON.stringify(created.body)}`,
+);
 const id = created.body?.id;
 
 // 1b. POST without consent is rejected
@@ -64,7 +72,11 @@ const bad = await req("/submit-concern", {
     consent: true,
   }),
 });
-check("POST invalid student number rejected", bad.status === 400, `status=${bad.status} body=${JSON.stringify(bad.body)}`);
+check(
+  "POST invalid student number rejected",
+  bad.status === 400,
+  `status=${bad.status} body=${JSON.stringify(bad.body)}`,
+);
 
 // 3. Admin login
 const login = await req("/admin/login", {
@@ -79,12 +91,20 @@ if (token) {
 
   // 3b. Admin session check
   const session = await req("/admin/session", { headers: auth });
-  check("Admin session check", session.status === 200 && session.body?.authenticated === true, `status=${session.status} body=${JSON.stringify(session.body)}`);
+  check(
+    "Admin session check",
+    session.status === 200 && session.body?.authenticated === true,
+    `status=${session.status} body=${JSON.stringify(session.body)}`,
+  );
 
   // 4. Admin concerns with search
   const s = await req("/admin/concerns?search=Doe", { headers: auth });
   const sCount = Array.isArray(s.body?.data) ? s.body.data.length : 0;
-  check("Admin search concerns", s.status === 200 && sCount >= 1, `status=${s.status} count=${sCount}`);
+  check(
+    "Admin search concerns",
+    s.status === 200 && sCount >= 1,
+    `status=${s.status} count=${sCount}`,
+  );
 
   // 4b. CSV export
   const csv = await fetch(BASE + "/admin/concerns/export", { headers: auth });
@@ -115,7 +135,11 @@ if (token) {
       headers: auth,
       body: JSON.stringify({ ...ann, title: ann.title + " (updated)" }),
     });
-    check("Admin update announcement", upd.status === 200, `status=${upd.status} body=${JSON.stringify(upd.body)}`);
+    check(
+      "Admin update announcement",
+      upd.status === 200,
+      `status=${upd.status} body=${JSON.stringify(upd.body)}`,
+    );
     // revert
     await req(`/admin/announcements/${ann.id}`, {
       method: "PUT",
@@ -143,7 +167,11 @@ if (token) {
       headers: auth,
       body: JSON.stringify({ status: "Resolved", response: "Thanks for your feedback!" }),
     });
-    check("Admin update concern response", updResp.status === 200 && updResp.body?.response === "Thanks for your feedback!", `status=${updResp.status}`);
+    check(
+      "Admin update concern response",
+      updResp.status === 200 && updResp.body?.response === "Thanks for your feedback!",
+      `status=${updResp.status}`,
+    );
   }
 
   // 7. Admin delete concern
@@ -152,12 +180,20 @@ if (token) {
       method: "DELETE",
       headers: auth,
     });
-    check("Admin delete concern", del.status === 200, `status=${del.status} body=${JSON.stringify(del.body)}`);
+    check(
+      "Admin delete concern",
+      del.status === 200,
+      `status=${del.status} body=${JSON.stringify(del.body)}`,
+    );
   }
 
   // 8. Admin delete concern - missing
   const delMissing = await req("/admin/concerns/999999", { method: "DELETE", headers: auth });
-  check("Admin delete missing concern", delMissing.status === 200 || delMissing.status === 404, `status=${delMissing.status}`);
+  check(
+    "Admin delete missing concern",
+    delMissing.status === 200 || delMissing.status === 404,
+    `status=${delMissing.status}`,
+  );
 }
 
 // 9. Public announcement POST is now rejected (auth required)
@@ -165,5 +201,8 @@ const publicPost = await req("/announcements", {
   method: "POST",
   body: JSON.stringify({ title: "Hack", date: "Jan 1", priority: "Normal", content: "spam" }),
 });
-check("Public announcement POST rejected", publicPost.status === 401, `status=${publicPost.status}`);
-
+check(
+  "Public announcement POST rejected",
+  publicPost.status === 401,
+  `status=${publicPost.status}`,
+);
