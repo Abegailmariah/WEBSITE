@@ -47,3 +47,5 @@ tsc_check.txt
 *.njsproj
 *.sln
 *.sw?
+
+.vercel

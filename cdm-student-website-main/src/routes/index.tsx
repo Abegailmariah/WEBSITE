@@ -8,12 +8,14 @@ interface Feature {
   t: string;
   d: string;
   icon: ReactNode;
+  to: "/announcements" | "/submit-concern" | "/contact";
 }
 
 const features: Feature[] = [
   {
     t: "Real-time Announcements",
     d: "Critical updates from your institute delivered instantly.",
+    to: "/announcements",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -36,6 +38,7 @@ const features: Feature[] = [
   {
     t: "Direct Concerns",
     d: "Send complaints, questions, or suggestions to the right office.",
+    to: "/submit-concern",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -59,6 +62,7 @@ const features: Feature[] = [
   {
     t: "Off-Campus Friendly",
     d: "Built for 4th-year students working outside the campus.",
+    to: "/contact",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -100,9 +104,49 @@ function Index() {
 
   const latest = announcements.slice(0, 3);
   const criticalCount = announcements.filter((a) => a.priority === "Critical").length;
+  const criticalItems = announcements.filter((a) => a.priority === "Critical").slice(0, 3);
 
   return (
     <div className="min-h-[calc(100vh-64px)]">
+      {/* Critical alert banner */}
+      {!isLoading && criticalCount > 0 && (
+        <div className="bg-destructive text-white" role="alert">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <span className="inline-flex items-center gap-2 font-semibold">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+              {criticalCount} critical {criticalCount === 1 ? "alert" : "alerts"}
+            </span>
+            <span className="text-white/85 hidden sm:inline" aria-hidden="true">
+              —
+            </span>
+            <span className="text-white/90">
+              {criticalItems.map((a) => a.title).join(" · ")}
+            </span>
+            <Link
+              to="/announcements"
+              search={{ priority: "Critical" }}
+              className="ml-auto font-semibold underline underline-offset-4 hover:text-white/90 whitespace-nowrap"
+            >
+              View critical →
+            </Link>
+          </div>
+        </div>
+      )}
       {/* Hero */}
       <section className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground relative overflow-hidden">
         {/* Decorative blobs */}
@@ -129,11 +173,11 @@ function Index() {
                 Colegio de Montalban
               </span>
               <h1 className="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
-                Welcome, CdM Student
+                Area-Based Academic Information Dissemination System
               </h1>
               <p className="mt-4 text-base sm:text-lg text-secondary/90 max-w-2xl mx-auto lg:mx-0">
-                Stay updated with school announcements and submit concerns directly to your
-                institute — all from one place.
+                Official academic updates from Colegio de Montalban, delivered to students through
+                Bluetooth Low Energy (BLE) beacons based on their location on campus.
               </p>
               <div className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start">
                 <Link
@@ -231,9 +275,12 @@ function Index() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {latest.map((a) => (
-              <article
+              <Link
                 key={a.id}
-                className="bg-card border rounded-xl p-5 shadow-sm flex flex-col card-hover"
+                to="/announcements"
+                search={{ open: a.id }}
+                className="bg-card border rounded-xl p-5 shadow-sm flex flex-col card-hover cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
+                aria-label={`Read announcement: ${a.title}`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">{a.date}</span>
@@ -252,7 +299,10 @@ function Index() {
                 <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">
                   {a.content}
                 </p>
-              </article>
+                <span className="mt-4 self-start text-primary font-medium text-sm">
+                  Read more →
+                </span>
+              </Link>
             ))}
           </div>
         )}
@@ -260,13 +310,19 @@ function Index() {
 
       <section className="max-w-6xl mx-auto px-4 pb-16 grid gap-6 md:grid-cols-3">
         {features.map((f) => (
-          <div key={f.t} className="bg-card rounded-xl p-6 shadow-sm border card-hover">
+          <Link
+            key={f.t}
+            to={f.to}
+            className="bg-card rounded-xl p-6 shadow-sm border card-hover block focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-label={`Go to ${f.t}`}
+          >
             <div className="w-11 h-11 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center font-bold mb-3 shadow-sm">
               {f.icon}
             </div>
             <h3 className="font-semibold text-lg">{f.t}</h3>
             <p className="text-sm text-muted-foreground mt-1">{f.d}</p>
-          </div>
+            <span className="mt-3 inline-block text-sm text-primary font-medium">Learn more →</span>
+          </Link>
         ))}
       </section>
     </div>

@@ -1,3 +1,5 @@
+import { getCsrfHeaderAsync } from "./csrf";
+
 export type Announcement = {
   id: number;
   title: string;
@@ -28,7 +30,7 @@ export function getAnnouncementsEndpoint(): string {
 
   if (typeof window !== "undefined" && !env?.VITE_ANNOUNCEMENTS_ENDPOINT) {
     console.warn(
-      "[CdM Portal] VITE_ANNOUNCEMENTS_ENDPOINT is not set. Using default:",
+      "[CdM AID System] VITE_ANNOUNCEMENTS_ENDPOINT is not set. Using default:",
       DEFAULT_ANNOUNCEMENTS_ENDPOINT,
       "\nCreate a .env file based on .env.example to configure.",
     );
@@ -67,7 +69,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "System Maintenance",
     date: "Nov 08",
     priority: "Critical",
-    content: "The student portal will be under maintenance from 10PM to 2AM.",
+    content: "The dissemination system will be under maintenance from 10PM to 2AM.",
   },
   {
     id: 5,
@@ -138,7 +140,12 @@ export async function createAnnouncement(announcement: NewAnnouncement): Promise
   const res = await fetch(endpoint, {
     method: "POST",
     credentials: "include",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      // Attach the CSRF token for state-changing requests (double-submit).
+      // Bootstraps the token cookie first if this is the first API call.
+      ...(await getCsrfHeaderAsync(endpoint)),
+    },
     body: JSON.stringify(announcement),
   });
 

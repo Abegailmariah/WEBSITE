@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { Logo } from "./Logo";
+
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -19,12 +21,10 @@ export function Navbar() {
     <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-full bg-secondary text-primary flex items-center justify-center font-bold shadow-sm group-hover:scale-105 transition-transform">
-            CdM
-          </div>
+          <Logo className="w-10 h-10 shrink-0 rounded-full shadow-sm group-hover:scale-105 transition-transform" />
           <div className="leading-tight">
             <div className="font-semibold text-white font-display">Colegio de Montalban</div>
-            <div className="text-xs text-secondary/90">Student Portal</div>
+            <div className="text-xs text-secondary/90">Academic Information Dissemination System</div>
           </div>
         </Link>
 

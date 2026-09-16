@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/submit-concern")({
   head: () => ({
     meta: [
-      { title: "Submit a Concern — CdM Student Portal" },
+      { title: "Submit a Concern — Academic Information Dissemination System" },
       {
         name: "description",
         content: "Submit a complaint, question, or suggestion to Colegio de Montalban.",
@@ -138,7 +138,15 @@ function SubmitConcernPage() {
       form.reset(defaultValues);
       setTimeout(() => setSubmitted(false), 15000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Submission failed";
+      const rawMessage = err instanceof Error ? err.message : "Submission failed";
+      // In demo deployments there is no backend, so the fetch itself fails.
+      // Show a friendly explanation instead of a raw network error.
+      const isBackendUnreachable =
+        err instanceof TypeError ||
+        /failed to fetch|networkerror|load failed/i.test(rawMessage);
+      const message = isBackendUnreachable
+        ? "Demo mode: no backend is connected, so concerns can't be submitted yet. Connect VITE_SUBMIT_CONCERN_ENDPOINT to a live API to enable submissions."
+        : rawMessage;
       setErrorMessage(message);
       toast.error("Submission failed", {
         description: message,

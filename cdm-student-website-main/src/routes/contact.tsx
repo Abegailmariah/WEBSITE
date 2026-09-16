@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { MapPin, Facebook, Mail, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — CdM Student Portal" },
+      { title: "Contact — Academic Information Dissemination System" },
       {
         name: "description",
         content: "Contact information and office directory for Colegio de Montalban.",
       },
-      { property: "og:title", content: "Contact — CdM Student Portal" },
+      { property: "og:title", content: "Contact — Academic Information Dissemination System" },
       {
         property: "og:description",
         content: "Contact information and office directory for Colegio de Montalban.",
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/contact")({
 
 const contactCards = [
   {
-    icon: "📍",
+    icon: MapPin,
     title: "Address",
     lines: [
       "Colegio de Montalban",
@@ -29,19 +30,19 @@ const contactCards = [
     ],
   },
   {
-    icon: "👍",
+    icon: Facebook,
     title: "Facebook",
     link: "https://www.facebook.com/official.colegiodemontalban",
     linkLabel: "Colegio de Montalban Official",
     lines: [],
   },
   {
-    icon: "✉️",
+    icon: Mail,
     title: "Email",
     lines: ["info@cdm.edu.ph", "registrar@cdm.edu.ph"],
   },
   {
-    icon: "🕒",
+    icon: Clock,
     title: "Office Hours",
     lines: ["Mon–Fri: 8:00 AM – 5:00 PM", "Sat: 8:00 AM – 12:00 PM"],
   },
@@ -64,33 +65,38 @@ function ContactPage() {
         <h1 className="text-3xl font-bold text-primary">Contact Us</h1>
         <p className="text-muted-foreground mt-1 max-w-2xl">
           Reach out to the school or find the right office for your concerns. You can also submit
-          your concerns directly through the portal.
+          your concerns directly through this website.
         </p>
       </header>
 
       {/* Contact cards */}
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-        {contactCards.map((card) => (
-          <div key={card.title} className="bg-card border rounded-xl p-5 shadow-sm card-hover">
-            <div className="text-2xl mb-2">{card.icon}</div>
-            <h2 className="font-semibold text-foreground">{card.title}</h2>
-            {card.lines.map((line, i) => (
-              <p key={i} className="text-sm text-muted-foreground mt-0.5">
-                {line}
-              </p>
-            ))}
-            {card.link && (
-              <a
-                href={card.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-block text-sm text-primary font-medium hover:underline break-words"
-              >
-                {card.linkLabel}
-              </a>
-            )}
-          </div>
-        ))}
+        {contactCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.title} className="bg-card border rounded-xl p-5 shadow-sm card-hover">
+              <div className="w-10 h-10 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center mb-3 shadow-sm">
+                <Icon size={20} aria-hidden="true" />
+              </div>
+              <h2 className="font-semibold text-foreground">{card.title}</h2>
+              {card.lines.map((line, i) => (
+                <p key={i} className="text-sm text-muted-foreground mt-0.5">
+                  {line}
+                </p>
+              ))}
+              {card.link && (
+                <a
+                  href={card.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-block text-sm text-primary font-medium hover:underline break-words"
+                >
+                  {card.linkLabel}
+                </a>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       {/* About section */}
@@ -103,9 +109,9 @@ function ContactPage() {
             municipality and beyond.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-            Through this student portal, we aim to keep students informed with official
-            announcements and provide a direct channel for submitting concerns to the appropriate
-            institute or office.
+            This system keeps students informed with official academic announcements delivered
+            through BLE beacons, and provides a direct channel for submitting concerns to the
+            appropriate institute or office.
           </p>
         </div>
       </section>

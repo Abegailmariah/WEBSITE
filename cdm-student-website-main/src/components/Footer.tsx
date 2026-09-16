@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
+import { Logo } from "./Logo";
+
 const contactInfo = [
   {
     label: "Address",
@@ -34,17 +36,15 @@ export function Footer() {
         {/* School info */}
         <div className="sm:col-span-2 lg:col-span-1">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-secondary text-primary flex items-center justify-center font-bold text-sm">
-              CdM
-            </div>
+            <Logo className="w-9 h-9 shrink-0 rounded-full" />
             <div className="leading-tight">
               <div className="font-semibold text-white text-sm">Colegio de Montalban</div>
-              <div className="text-xs text-secondary/90">Student Portal</div>
+              <div className="text-xs text-secondary/90">Academic Information Dissemination System</div>
             </div>
           </div>
           <p className="mt-3 text-xs text-secondary/80 max-w-md leading-relaxed">
-            Your one-stop portal for official announcements and submitting concerns to the right
-            institute. Stay informed, stay connected.
+            Official academic information from Colegio de Montalban, disseminated through Bluetooth
+            Low Energy (BLE) beacons that notify students when an update applies to their area.
           </p>
         </div>
 

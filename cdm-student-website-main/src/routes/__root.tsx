@@ -81,34 +81,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CdM Student Portal — Announcements & Concerns" },
+      { name: "theme-color", content: "#0f4a3c" },
+      { title: "CdM Student Portal — Colegio de Montalban" },
       {
         name: "Description",
-        content: "Colegio de Montalban student portal for announcements and submitting concerns.",
+        content:
+          "Official announcements and student concerns portal for Colegio de Montalban. View updates, submit concerns, and reach the right office.",
       },
       { name: "author", content: "Colegio de Montalban" },
-      { property: "og:title", content: "CdM Student Portal — Announcements & Concerns" },
+      { property: "og:title", content: "CdM Student Portal — Colegio de Montalban" },
       {
         property: "og:Description",
-        content: "Colegio de Montalban student portal for announcements and submitting concerns.",
+        content:
+          "Official announcements and student concerns portal for Colegio de Montalban.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "CdM Student Portal — Announcements & Concerns" },
+      { name: "twitter:title", content: "CdM Student Portal — Colegio de Montalban" },
       {
         name: "twitter:Description",
-        content: "Colegio de Montalban student portal for announcements and submitting concerns.",
+        content:
+          "Official announcements and student concerns portal for Colegio de Montalban.",
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22ad405e-0b4e-42e8-a90d-565eae210100/id-preview-7b4776d6--5936f25b-1289-48e2-ba16-a8910d06fdd3.lovable.app-1784340446716.png",
+        content: "/og-cover.svg",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/22ad405e-0b4e-42e8-a90d-565eae210100/id-preview-7b4776d6--5936f25b-1289-48e2-ba16-a8910d06fdd3.lovable.app-1784340446716.png",
+        content: "/og-cover.svg",
       },
     ],
     links: [
@@ -129,6 +130,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      // SVG favicon first (crisp at any size, matches the in-app CdM badge);
+      // the .ico is kept as a fallback for browsers without SVG icon support.
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),

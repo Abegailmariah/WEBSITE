@@ -1,3 +1,5 @@
+import { getCsrfHeaderAsync } from "./csrf";
+
 export type SubmitConcernPayload = {
   last: string;
   first: string;
@@ -27,7 +29,7 @@ export function getSubmitConcernEndpoint() {
 
   if (typeof window !== "undefined" && !env?.VITE_SUBMIT_CONCERN_ENDPOINT) {
     console.warn(
-      "[CdM Portal] VITE_SUBMIT_CONCERN_ENDPOINT is not set. Using default:",
+      "[CdM AID System] VITE_SUBMIT_CONCERN_ENDPOINT is not set. Using default:",
       DEFAULT_ENDPOINT,
       "\nCreate a .env file based on .env.example to configure.",
     );
@@ -41,8 +43,13 @@ export async function submitConcern(payload: SubmitConcernPayload): Promise<Subm
 
   const res = await fetch(endpoint, {
     method: "POST",
+    // Send cookies (CSRF + any session) on this cross-origin request.
+    credentials: "include",
     headers: {
       "content-type": "application/json",
+      // Attach the CSRF token for state-changing requests (double-submit).
+      // Bootstraps the token cookie first if this is the first API call.
+      ...(await getCsrfHeaderAsync(endpoint)),
     },
     body: JSON.stringify(payload),
   });

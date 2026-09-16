@@ -1,14 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAnnouncements, type Announcement } from "@/lib/announcements-api";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 
+type AnnouncementsSearch = {
+  open?: number;
+  priority?: "Critical" | "Normal";
+};
+
 export const Route = createFileRoute("/announcements")({
+  validateSearch: (search: Record<string, unknown>): AnnouncementsSearch => ({
+    open: typeof search.open === "number" ? search.open : Number(search.open) || undefined,
+    priority:
+      search.priority === "Critical" || search.priority === "Normal" ? search.priority : undefined,
+  }),
   head: () => ({
     meta: [
-      { title: "Announcements — CdM Student Portal" },
+      { title: "Announcements — Academic Information Dissemination System" },
       { name: "description", content: "Latest announcements for Colegio de Montalban students." },
       { property: "og:title", content: "CdM Announcements" },
       { property: "og:description", content: "Latest announcements for CdM students." },
@@ -18,13 +28,28 @@ export const Route = createFileRoute("/announcements")({
 });
 
 function AnnouncementsPage() {
+  const navigate = useNavigate({ from: "/announcements" });
+  const searchParams = useSearch({ from: "/announcements" });
+  // openId mirrors ?open=<id> so homepage cards can deep-link into the modal.
+  const openId = searchParams.open;
+  // ?priority=Critical comes from the homepage critical banner.
+  const initialPriority = searchParams.priority;
   const [open, setOpen] = useState<Announcement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [search, setSearch] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState<"All" | "Critical" | "Normal">("All");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<"All" | "Critical" | "Normal">(
+    initialPriority ?? "All",
+  );
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
+
+  // Debounce the search input (300ms) so filtering doesn't run on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: announcements = [],
@@ -41,7 +66,26 @@ function AnnouncementsPage() {
     refetchIntervalInBackground: false,
   });
 
-  // Focus trap: lock focus inside modal while open, restore on close
+  // Deep-link support: open the modal when ?open=<id> is present (e.g. from
+  // the homepage "Latest Announcements" cards).
+  useEffect(() => {
+    if (openId == null || announcements.length === 0) return;
+    const match = announcements.find((a) => a.id === openId);
+    if (match) setOpen(match);
+  }, [openId, announcements]);
+
+  // Keep ?open in sync when the modal opens/closes so the URL is shareable.
+  function openAnnouncement(a: Announcement) {
+    setOpen(a);
+    void navigate({ search: (prev) => ({ ...prev, open: a.id }) });
+  }
+
+  function closeAnnouncement() {
+    setOpen(null);
+    void navigate({ search: (prev) => ({ ...prev, open: undefined }) });
+  }
+
+  // Focus trap: lock Tab focus inside the modal while open, restore on close
   useEffect(() => {
     if (open) {
       lastFocusedRef.current = document.activeElement as HTMLElement;
@@ -56,9 +100,39 @@ function AnnouncementsPage() {
   // Close on Escape key
   function handleModalKeyDown(e: KeyboardEvent) {
     if (e.key === "Escape") {
-      setOpen(null);
+      closeAnnouncement();
+      return;
+    }
+    // Full Tab trap: cycle focus within the modal instead of escaping to the page.
+    if (e.key === "Tab" && modalRef.current) {
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const visible = Array.from(focusable).filter(
+        (el) => !el.hasAttribute("disabled") && el.offsetParent !== null,
+      );
+      if (visible.length === 0) return;
+      const first = visible[0];
+      const last = visible[visible.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
   }
+
+  // Lock body scroll while the modal is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   // Loading skeleton
   if (isLoading) {
@@ -118,12 +192,13 @@ function AnnouncementsPage() {
     );
   }
 
-  // Filter announcements by search + priority
+  // Filter announcements by debounced search + priority
   const filtered = announcements.filter((a) => {
+    const q = debouncedSearch.trim().toLowerCase();
     const matchesSearch =
-      !search ||
-      a.title.toLowerCase().includes(search.toLowerCase()) ||
-      a.content.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      a.title.toLowerCase().includes(q) ||
+      a.content.toLowerCase().includes(q);
     const matchesPriority = priorityFilter === "All" || a.priority === priorityFilter;
     return matchesSearch && matchesPriority;
   });
@@ -205,7 +280,7 @@ function AnnouncementsPage() {
                 {a.content}
               </p>
               <button
-                onClick={() => setOpen(a)}
+                onClick={() => openAnnouncement(a)}
                 className="mt-4 self-start text-primary font-medium hover:underline"
                 aria-expanded={open?.id === a.id}
                 aria-controls={`announcement-dialog-${a.id}`}
@@ -220,7 +295,7 @@ function AnnouncementsPage() {
       {open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto animate-in fade-in-0 duration-200"
-          onClick={() => setOpen(null)}
+          onClick={closeAnnouncement}
           onKeyDown={handleModalKeyDown}
           role="dialog"
           aria-modal="true"
@@ -251,7 +326,7 @@ function AnnouncementsPage() {
             <p className="mt-3 text-sm text-foreground whitespace-pre-line">{open.content}</p>
             <button
               ref={closeButtonRef}
-              onClick={() => setOpen(null)}
+              onClick={closeAnnouncement}
               className="mt-6 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium"
               aria-label={`Close ${open.title} announcement`}
             >

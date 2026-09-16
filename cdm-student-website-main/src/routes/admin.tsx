@@ -23,12 +23,17 @@ import {
   type Announcement,
   type AnnouncementsResponse,
 } from "@/lib/announcements-api";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin — CdM Student Portal" },
-      { name: "description", content: "Admin dashboard for Colegio de Montalban student portal." },
+      { title: "Admin — Academic Information Dissemination System" },
+      {
+        name: "description",
+        content:
+          "Admin console for publishing announcements disseminated via Bluetooth Low Energy (BLE) beacons at Colegio de Montalban.",
+      },
     ],
   }),
   component: AdminPage,
@@ -138,12 +143,12 @@ function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-card border rounded-lg shadow-sm p-8">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 mx-auto rounded-full bg-secondary text-primary flex items-center justify-center font-bold text-lg mb-3">
-            CdM
+          <div className="w-12 h-12 mx-auto mb-3">
+            <Logo className="w-12 h-12" title="Colegio de Montalban" />
           </div>
           <h1 className="text-xl font-bold text-foreground">Admin Login</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Enter the admin PIN to manage the portal.
+            Enter the admin PIN to publish announcements and manage the dissemination system.
           </p>
         </div>
 
