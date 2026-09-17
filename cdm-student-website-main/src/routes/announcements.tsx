@@ -18,10 +18,17 @@ export const Route = createFileRoute("/announcements")({
   }),
   head: () => ({
     meta: [
-      { title: "Announcements — Academic Information Dissemination System" },
-      { name: "description", content: "Latest announcements for Colegio de Montalban students." },
-      { property: "og:title", content: "CdM Announcements" },
-      { property: "og:description", content: "Latest announcements for CdM students." },
+      { title: "Announcements — Area-Based Academic Information Dissemination System" },
+      {
+        name: "description",
+        content:
+          "Area-based academic announcements for Colegio de Montalban students, delivered via BLE beacons and mirrored on the web.",
+      },
+      { property: "og:title", content: "CdM Area-Based Announcements (BLE Beacons)" },
+      {
+        property: "og:description",
+        content: "Latest area-based announcements for CdM students.",
+      },
     ],
   }),
   component: AnnouncementsPage,
@@ -44,6 +51,7 @@ function AnnouncementsPage() {
     initialPriority ?? "All",
   );
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [areaFilter, setAreaFilter] = useState<string>("All");
 
   // Debounce the search input (300ms) so filtering doesn't run on every keystroke.
   useEffect(() => {
@@ -192,31 +200,55 @@ function AnnouncementsPage() {
     );
   }
 
-  // Filter announcements by debounced search + priority
+  // All campus areas present in the data (for the area filter dropdown).
+  // NOTE: computed after announcements is loaded (below) to avoid use-before-declare.
+  const availableAreas = [...new Set(announcements.map((a) => a.area || "Campus-Wide"))].sort();
+
+  // Filter announcements by debounced search + priority + area
   const filtered = announcements.filter((a) => {
     const q = debouncedSearch.trim().toLowerCase();
     const matchesSearch =
       !q ||
       a.title.toLowerCase().includes(q) ||
-      a.content.toLowerCase().includes(q);
+      a.content.toLowerCase().includes(q) ||
+      (a.area || "").toLowerCase().includes(q);
     const matchesPriority = priorityFilter === "All" || a.priority === priorityFilter;
-    return matchesSearch && matchesPriority;
+    const matchesArea = areaFilter === "All" || (a.area || "Campus-Wide") === areaFilter;
+    return matchesSearch && matchesPriority && matchesArea;
   });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <PageHeader title="Announcements" subtitle="Official updates from Colegio de Montalban." />
+      <PageHeader
+        title="Announcements"
+        subtitle="Official area-based updates from Colegio de Montalban — mirrored from BLE beacons on campus."
+      />
 
-      {/* Search + priority filter */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search announcements..."
-          aria-label="Search announcements"
-          className="w-full sm:w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-        />
+      {/* Search + priority + area filter */}
+      <div className="mb-6 flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search announcements or areas..."
+            aria-label="Search announcements"
+            className="w-full sm:w-64 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <select
+            value={areaFilter}
+            onChange={(e) => setAreaFilter(e.target.value)}
+            aria-label="Filter by campus area"
+            className="w-full sm:w-56 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <option value="All">📍 All areas</option>
+            {availableAreas.map((area) => (
+              <option key={area} value={area}>
+                📍 {area}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex flex-wrap gap-2">
           {(["All", "Critical", "Normal"] as const).map((p) => (
             <button
@@ -275,6 +307,12 @@ function AnnouncementsPage() {
                   {a.priority}
                 </span>
               </div>
+              <span
+                className="self-start inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-2"
+                title="Campus area whose BLE beacon mirrors this announcement"
+              >
+                📍 {a.area || "Campus-Wide"}
+              </span>
               <h2 className="text-lg font-semibold text-foreground">{a.title}</h2>
               <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">
                 {a.content}
@@ -320,6 +358,12 @@ function AnnouncementsPage() {
                 {open.priority}
               </span>
             </div>
+            <span
+              className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-2"
+              title="Campus area whose BLE beacon mirrors this announcement"
+            >
+              📍 {open.area || "Campus-Wide"}
+            </span>
             <h2 id={`announcement-title-${open.id}`} className="text-xl font-bold text-primary">
               {open.title}
             </h2>

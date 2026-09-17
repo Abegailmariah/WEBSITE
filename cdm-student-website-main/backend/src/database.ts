@@ -70,6 +70,7 @@ function initializeSchema(database: SqlJsDatabase): void {
       title TEXT NOT NULL,
       date TEXT NOT NULL,
       priority TEXT NOT NULL CHECK (priority IN ('Critical', 'Normal')),
+      area TEXT NOT NULL DEFAULT 'Campus-Wide',
       content TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -119,14 +120,24 @@ function initializeSchema(database: SqlJsDatabase): void {
 
 // Lightweight migrations that add columns/tables without dropping data.
 function runMigrations(database: SqlJsDatabase): void {
-  const cols = database.exec("PRAGMA table_info(concerns)");
-  const existing: string[] = cols.length > 0 ? cols[0].values.map((row) => String(row[1])) : [];
+  const concernsCols = database.exec("PRAGMA table_info(concerns)");
+  const concernCols: string[] =
+    concernsCols.length > 0 ? concernsCols[0].values.map((row) => String(row[1])) : [];
 
-  if (!existing.includes("email")) {
+  if (!concernCols.includes("email")) {
     database.run("ALTER TABLE concerns ADD COLUMN email TEXT");
   }
-  if (!existing.includes("response")) {
+  if (!concernCols.includes("response")) {
     database.run("ALTER TABLE concerns ADD COLUMN response TEXT");
+  }
+
+  // Area-Based capstone: announcements carry the campus area whose BLE beacon
+  // mirrors them. Backfill existing rows with the default.
+  const annCols = database.exec("PRAGMA table_info(announcements)");
+  const announcementCols: string[] =
+    annCols.length > 0 ? annCols[0].values.map((row) => String(row[1])) : [];
+  if (!announcementCols.includes("area")) {
+    database.run("ALTER TABLE announcements ADD COLUMN area TEXT NOT NULL DEFAULT 'Campus-Wide'");
   }
 }
 
@@ -140,6 +151,7 @@ function seedIfEmpty(database: SqlJsDatabase): void {
       title: "Class Suspension",
       date: "Oct 20, 2025",
       priority: "Critical",
+      area: "Campus-Wide",
       content:
         "Classes are suspended due to typhoon. Stay safe and monitor official channels for updates.",
     },
@@ -147,6 +159,7 @@ function seedIfEmpty(database: SqlJsDatabase): void {
       title: "Enrollment Schedule",
       date: "Oct 25, 2025",
       priority: "Normal",
+      area: "Registrar's Office",
       content:
         "Enrollment for this Semester starts. Please prepare your requirements early.\n\n1st Year: October 25-26\n2nd Year: October 27-28\n3rd Year: October 29-30\n4th Year: October 31 - November 1",
     },
@@ -154,25 +167,28 @@ function seedIfEmpty(database: SqlJsDatabase): void {
       title: "OJT Orientation",
       date: "Nov 03, 2025",
       priority: "Normal",
+      area: "AVR",
       content: "Mandatory OJT orientation for all 4th-year students at the AVR.",
     },
     {
       title: "System Maintenance",
       date: "Nov 08, 2025",
       priority: "Critical",
-      content: "The student portal will be under maintenance from 10PM to 2AM.",
+      area: "Campus-Wide",
+      content: "The information dissemination system will be under maintenance from 10PM to 2AM.",
     },
     {
       title: "Scholarship Application",
       date: "Nov 10, 2025",
       priority: "Normal",
+      area: "Scholarship Office",
       content:
         "Scholarship applications are now open for the upcoming semester!\n\nEligible students may apply for:\n- TES (Tertiary Education Subsidy)\n- TDP (Tulong Dunong Program)\n\nDeadline: November 30\nLocation: Registrar's Office\n\nFor inquiries, visit the Scholarship Office or email scholarships@cdm.edu.ph.",
     },
   ];
 
   const stmt = database.prepare(
-    "INSERT INTO announcements (title, date, priority, content) VALUES (@title, @date, @priority, @content)",
+    "INSERT INTO announcements (title, date, priority, area, content) VALUES (@title, @date, @priority, @area, @content)",
   );
 
   for (const item of seedData) {
@@ -180,6 +196,7 @@ function seedIfEmpty(database: SqlJsDatabase): void {
       "@title": item.title,
       "@date": item.date,
       "@priority": item.priority,
+      "@area": item.area,
       "@content": item.content,
     });
     stmt.run();
@@ -319,12 +336,16 @@ export async function getAllAnnouncements(
 
 export async function createAnnouncement(announcement: Announcement): Promise<Announcement> {
   const database = await getDatabase();
-  database.run("INSERT INTO announcements (title, date, priority, content) VALUES (?, ?, ?, ?)", [
-    announcement.title,
-    announcement.date,
-    announcement.priority,
-    announcement.content,
-  ]);
+  database.run(
+    "INSERT INTO announcements (title, date, priority, area, content) VALUES (?, ?, ?, ?, ?)",
+    [
+      announcement.title,
+      announcement.date,
+      announcement.priority,
+      announcement.area,
+      announcement.content,
+    ],
+  );
   const result = database.exec("SELECT last_insert_rowid() AS id");
   saveDatabase(database);
 
@@ -459,12 +480,19 @@ export async function deleteConcern(id: number): Promise<boolean> {
 
 export async function updateAnnouncement(
   id: number,
-  announcement: Pick<Announcement, "title" | "date" | "priority" | "content">,
+  announcement: Pick<Announcement, "title" | "date" | "priority" | "area" | "content">,
 ): Promise<Announcement | null> {
   const database = await getDatabase();
   database.run(
-    "UPDATE announcements SET title = ?, date = ?, priority = ?, content = ? WHERE id = ?",
-    [announcement.title, announcement.date, announcement.priority, announcement.content, id],
+    "UPDATE announcements SET title = ?, date = ?, priority = ?, area = ?, content = ? WHERE id = ?",
+    [
+      announcement.title,
+      announcement.date,
+      announcement.priority,
+      announcement.area,
+      announcement.content,
+      id,
+    ],
   );
   saveDatabase(database);
 

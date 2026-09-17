@@ -82,34 +82,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#0f4a3c" },
-      { title: "CdM Student Portal — Colegio de Montalban" },
+      { title: "Area-Based Academic Information Dissemination System — Colegio de Montalban" },
       {
         name: "Description",
         content:
-          "Official announcements and student concerns portal for Colegio de Montalban. View updates, submit concerns, and reach the right office.",
+          "Web component of the capstone: Area-Based Academic Information Dissemination System using Bluetooth Low Energy (BLE) Beacon Technology at Colegio de Montalban. Read area-based announcements, submit concerns, and reach the right office.",
       },
       { name: "author", content: "Colegio de Montalban" },
-      { property: "og:title", content: "CdM Student Portal — Colegio de Montalban" },
+      {
+        property: "og:title",
+        content: "Area-Based Academic Information Dissemination System — Colegio de Montalban",
+      },
       {
         property: "og:Description",
         content:
-          "Official announcements and student concerns portal for Colegio de Montalban.",
+          "Area-based academic announcements via BLE beacons at Colegio de Montalban, plus student concerns and support.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "CdM Student Portal — Colegio de Montalban" },
+      {
+        name: "twitter:title",
+        content: "Area-Based Academic Information Dissemination System — Colegio de Montalban",
+      },
       {
         name: "twitter:Description",
         content:
-          "Official announcements and student concerns portal for Colegio de Montalban.",
+          "Area-based academic announcements via BLE beacons at Colegio de Montalban, plus student concerns and support.",
       },
       {
         property: "og:image",
-        content: "/og-cover.svg",
+        content: "/og-cover.png",
       },
       {
         name: "twitter:image",
-        content: "/og-cover.svg",
+        content: "/og-cover.png",
       },
     ],
     links: [
@@ -134,6 +140,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // the .ico is kept as a fallback for browsers without SVG icon support.
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,

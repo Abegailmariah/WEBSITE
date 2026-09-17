@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   adminLogin,
   adminLogout,
@@ -28,11 +28,11 @@ import { Logo } from "@/components/Logo";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin — Academic Information Dissemination System" },
+      { title: "Admin — Area-Based Academic Information Dissemination System (BLE)" },
       {
         name: "description",
         content:
-          "Admin console for publishing announcements disseminated via Bluetooth Low Energy (BLE) beacons at Colegio de Montalban.",
+          "Admin console for publishing area-based announcements disseminated via Bluetooth Low Energy (BLE) beacons at Colegio de Montalban, and for managing student concerns.",
       },
     ],
   }),
@@ -44,13 +44,11 @@ function AdminPage() {
   const [tab, setTab] = useState<"overview" | "announcements" | "concerns" | "audit">("overview");
 
   // Check session on mount (httpOnly cookie)
-  const [checked, setChecked] = useState(false);
-  if (!checked) {
-    setChecked(true);
+  useEffect(() => {
     void checkAdminSession()
       .then(setAuthed)
       .catch(() => setAuthed(false));
-  }
+  }, []);
 
   if (authed === null) {
     return (
@@ -69,11 +67,11 @@ function AdminPage() {
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold mb-2">
-            Admin
+            Admin · BLE Beacon Capstone
           </span>
           <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
-            Manage announcements and track student concerns.
+            Publish area-based announcements for BLE beacons and track student concerns.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -148,7 +146,7 @@ function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
           </div>
           <h1 className="text-xl font-bold text-foreground">Admin Login</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Enter the admin PIN to publish announcements and manage the dissemination system.
+            Enter the admin PIN to publish area-based announcements and manage student concerns.
           </p>
         </div>
 
@@ -181,8 +179,7 @@ function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
         </form>
 
         <p className="mt-4 text-xs text-muted-foreground text-center">
-          Default PIN: <code className="bg-muted px-1 py-0.5 rounded">admin123</code> (configurable
-          via ADMIN_PIN env)
+          Authorized personnel only. Contact the system administrator if you need access.
         </p>
       </div>
     </div>
@@ -209,11 +206,10 @@ function OverviewTab() {
     }
   };
 
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded) {
-    setLoaded(true);
+  useEffect(() => {
     void load();
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
+  }, []);
 
   if (loading) {
     return (
@@ -236,7 +232,7 @@ function OverviewTab() {
   if (!stats) return null;
 
   const cards = [
-    { label: "Total Announcements", value: stats.announcements, accent: "text-primary" },
+    { label: "Total Area Announcements", value: stats.announcements, accent: "text-primary" },
     { label: "Total Concerns", value: stats.concerns, accent: "text-foreground" },
     { label: "Pending", value: stats.pending, accent: "text-amber-600" },
     { label: "Resolved", value: stats.resolved, accent: "text-emerald-600" },
@@ -255,6 +251,10 @@ function OverviewTab() {
 
       <div className="mt-6 bg-card border rounded-lg p-6 shadow-sm">
         <h2 className="font-semibold text-foreground mb-2">Concern Status</h2>
+        <p className="-mt-1 mb-3 text-xs text-muted-foreground">
+          Concerns submitted through the website are routed here; area announcements above are what
+          BLE beacons broadcast per location.
+        </p>
         <div className="flex flex-wrap gap-6">
           {[
             { label: "Pending", value: stats.pending, color: "#f59e0b" },
@@ -302,11 +302,10 @@ function AnnouncementsTab() {
     }
   };
 
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded && !response) {
-    setLoaded(true);
+  useEffect(() => {
     void load(1);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
+  }, []);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Delete this announcement?")) return;
@@ -338,7 +337,12 @@ function AnnouncementsTab() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Announcements</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Area Announcements</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            These are published to the website and mirrored to BLE beacons per area.
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -351,7 +355,7 @@ function AnnouncementsTab() {
             onClick={() => setShowForm((v) => !v)}
             className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:brightness-110 transition whitespace-nowrap"
           >
-            {showForm ? "Cancel" : "+ New Announcement"}
+            {showForm ? "Cancel" : "+ New Area Announcement"}
           </button>
         </div>
       </div>
@@ -406,7 +410,7 @@ function AnnouncementsTab() {
           {filtered.map((a) => (
             <div key={a.id} className="p-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={
                       "text-xs font-semibold px-2 py-0.5 rounded-full " +
@@ -416,6 +420,12 @@ function AnnouncementsTab() {
                     }
                   >
                     {a.priority}
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary"
+                    title="Campus area whose BLE beacon mirrors this announcement"
+                  >
+                    📍 {a.area || "Campus-Wide"}
                   </span>
                   <span className="text-xs text-muted-foreground">{a.date}</span>
                 </div>
@@ -474,10 +484,28 @@ function AnnouncementsTab() {
   );
 }
 
+// Campus areas with BLE beacons. Keep in sync with the mobile/beacon deployment.
+export const CAMPUS_AREAS = [
+  "Campus-Wide",
+  "Main Gate",
+  "Registrar's Office",
+  "Accounting Office",
+  "Scholarship Office",
+  "Guidance & Counseling",
+  "ICS Building",
+  "IBE Building",
+  "ITE Building",
+  "AVR",
+  "Library",
+  "Canteen",
+] as const;
+
 function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => void }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [priority, setPriority] = useState<"Critical" | "Normal">("Normal");
+  const [area, setArea] = useState<string>("Campus-Wide");
+  const [customArea, setCustomArea] = useState("");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -487,7 +515,8 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
     setBusy(true);
     setError(null);
     try {
-      const created = await createAnnouncement({ title, date, priority, content });
+      const resolvedArea = area === "Other" ? customArea.trim() : area;
+      const created = await createAnnouncement({ title, date, priority, area: resolvedArea, content });
       onCreated(created);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create announcement");
@@ -523,7 +552,7 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
           placeholder="e.g. Nov 20, 2025"
         />
       </div>
-      <div className="sm:col-span-2">
+      <div>
         <label className="block text-sm font-medium text-foreground mb-1">Priority</label>
         <select
           value={priority}
@@ -533,6 +562,31 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
           <option value="Normal">Normal</option>
           <option value="Critical">Critical</option>
         </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1">
+          Area / Beacon Location *
+        </label>
+        <select value={area} onChange={(e) => setArea(e.target.value)} className={input} required>
+          {CAMPUS_AREAS.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+          <option value="Other">Other…</option>
+        </select>
+        {area === "Other" && (
+          <input
+            required
+            value={customArea}
+            onChange={(e) => setCustomArea(e.target.value)}
+            className={`${input} mt-2`}
+            placeholder="e.g. Covered Court"
+          />
+        )}
+        <p className="mt-1 text-xs text-muted-foreground">
+          The BLE beacon in this area mirrors the announcement.
+        </p>
       </div>
       <div className="sm:col-span-2">
         <label className="block text-sm font-medium text-foreground mb-1">Content *</label>
@@ -577,6 +631,14 @@ function EditAnnouncementForm({
   const [title, setTitle] = useState(announcement.title);
   const [date, setDate] = useState(announcement.date);
   const [priority, setPriority] = useState<"Critical" | "Normal">(announcement.priority);
+  const [area, setArea] = useState<string>(
+    (CAMPUS_AREAS as readonly string[]).includes(announcement.area)
+      ? announcement.area
+      : "Other",
+  );
+  const [customArea, setCustomArea] = useState<string>(
+    (CAMPUS_AREAS as readonly string[]).includes(announcement.area) ? "" : announcement.area,
+  );
   const [content, setContent] = useState(announcement.content);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -589,7 +651,14 @@ function EditAnnouncementForm({
     setBusy(true);
     setError(null);
     try {
-      const updated = await updateAnnouncement(announcement.id, { title, date, priority, content });
+      const resolvedArea = area === "Other" ? customArea.trim() : area;
+      const updated = await updateAnnouncement(announcement.id, {
+        title,
+        date,
+        priority,
+        area: resolvedArea,
+        content,
+      });
       onUpdated({ ...announcement, ...updated });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update announcement");
@@ -622,7 +691,7 @@ function EditAnnouncementForm({
           placeholder="e.g. Nov 20, 2025"
         />
       </div>
-      <div className="sm:col-span-2">
+      <div>
         <label className="block text-sm font-medium text-foreground mb-1">Priority</label>
         <select
           value={priority}
@@ -632,6 +701,28 @@ function EditAnnouncementForm({
           <option value="Normal">Normal</option>
           <option value="Critical">Critical</option>
         </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1">
+          Area / Beacon Location *
+        </label>
+        <select value={area} onChange={(e) => setArea(e.target.value)} className={input} required>
+          {CAMPUS_AREAS.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+          <option value="Other">Other…</option>
+        </select>
+        {area === "Other" && (
+          <input
+            required
+            value={customArea}
+            onChange={(e) => setCustomArea(e.target.value)}
+            className={`${input} mt-2`}
+            placeholder="e.g. Covered Court"
+          />
+        )}
       </div>
       <div className="sm:col-span-2">
         <label className="block text-sm font-medium text-foreground mb-1">Content *</label>
@@ -701,11 +792,10 @@ function ConcernsTab() {
     }
   };
 
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded && !response) {
-    setLoaded(true);
+  useEffect(() => {
     void load(1);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
+  }, []);
 
   const handleStatus = async (id: number, status: AdminConcern["status"]) => {
     setBusyId(id);
@@ -996,11 +1086,10 @@ function AuditTab() {
     }
   };
 
-  const [loaded, setLoaded] = useState(false);
-  if (!loaded && !logs) {
-    setLoaded(true);
+  useEffect(() => {
     void load();
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
+  }, []);
 
   return (
     <div>

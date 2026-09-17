@@ -31,7 +31,7 @@ router.get("/", async (req: Request, res: Response) => {
 // POST /announcements — Create a new announcement (admin only)
 router.post("/", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { title, date, priority, content } = req.body;
+    const { title, date, priority, area, content } = req.body;
 
     // Validation
     const errors: string[] = [];
@@ -39,6 +39,8 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     if (!date || typeof date !== "string") errors.push("date is required");
     if (!priority || !["Critical", "Normal"].includes(priority))
       errors.push("priority must be 'Critical' or 'Normal'");
+    if (!area || typeof area !== "string" || !area.trim())
+      errors.push("area is required (campus area whose BLE beacon mirrors this)");
     if (!content || typeof content !== "string") errors.push("content is required");
 
     if (errors.length > 0) {
@@ -46,7 +48,13 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    const announcement = await createAnnouncement({ title, date, priority, content });
+    const announcement = await createAnnouncement({
+      title,
+      date,
+      priority,
+      area: String(area).trim(),
+      content,
+    });
     await addAuditLog("announcement.create", `Created announcement #${announcement.id} — ${title}`);
     res.status(201).json(announcement);
   } catch (err) {

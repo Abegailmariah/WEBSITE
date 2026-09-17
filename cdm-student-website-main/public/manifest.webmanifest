@@ -1,0 +1,12 @@
+{
+  "name": "Area-Based Academic Information Dissemination System — Colegio de Montalban",
+  "short_name": "CdM BLE Info",
+  "description": "Web component of the capstone: area-based academic announcements via BLE beacons at Colegio de Montalban, plus student concerns.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f4a3c",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

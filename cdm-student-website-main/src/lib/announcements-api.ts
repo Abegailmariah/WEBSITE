@@ -5,6 +5,8 @@ export type Announcement = {
   title: string;
   date: string;
   priority: "Critical" | "Normal";
+  /** Campus area this announcement applies to (mirrored to the BLE beacon in that area). */
+  area: string;
   content: string;
 };
 
@@ -12,6 +14,7 @@ export type NewAnnouncement = {
   title: string;
   date: string;
   priority: "Critical" | "Normal";
+  area: string;
   content: string;
 };
 
@@ -46,6 +49,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "Class Suspension",
     date: "Oct 20",
     priority: "Critical",
+    area: "Campus-Wide",
     content:
       "Classes are suspended due to typhoon. Stay safe and monitor official channels for updates.",
   },
@@ -54,6 +58,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "Enrollment Schedule",
     date: "Oct 25",
     priority: "Normal",
+    area: "Registrar's Office",
     content:
       "Enrollment for this Semester starts. Please prepare your requirements early.\n\n1st Year: October 25-26\n2nd Year: October 27-28\n3rd Year: October 29-30\n4th Year: October 31 - November 1",
   },
@@ -62,6 +67,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "OJT Orientation",
     date: "Nov 03",
     priority: "Normal",
+    area: "AVR",
     content: "Mandatory OJT orientation for all 4th-year students at the AVR.",
   },
   {
@@ -69,6 +75,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "System Maintenance",
     date: "Nov 08",
     priority: "Critical",
+    area: "Campus-Wide",
     content: "The dissemination system will be under maintenance from 10PM to 2AM.",
   },
   {
@@ -76,6 +83,7 @@ const fallbackAnnouncements: Announcement[] = [
     title: "Scholarship Application",
     date: "Nov 10",
     priority: "Normal",
+    area: "Scholarship Office",
     content:
       "Scholarship applications are now open for the upcoming semester!\n\nEligible students may apply for:\n- TES (Tertiary Education Subsidy)\n- TDP (Tulong Dunong Program)\n\nDeadline: November 30\nLocation: Registrar's Office\n\nFor inquiries, visit the Scholarship Office or email scholarships@cdm.edu.ph.",
   },

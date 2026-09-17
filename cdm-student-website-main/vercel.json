@@ -1,7 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
+  "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": ".vercel/output",
-  "installCommand": "npm install"
+  "headers": [
+    {
+      "source": "/favicon.svg",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, immutable" }]
+    },
+    {
+      "source": "/og-cover.png",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, immutable" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
 }
+

@@ -4,12 +4,16 @@ import { MapPin, Facebook, Mail, Clock } from "lucide-react";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Academic Information Dissemination System" },
+      { title: "About Us — Area-Based Academic Information Dissemination System (BLE)" },
       {
         name: "description",
-        content: "Contact information and office directory for Colegio de Montalban.",
+        content:
+          "About the capstone: Area-Based Academic Information Dissemination System using BLE Beacon Technology at Colegio de Montalban. Contact information and office directory.",
       },
-      { property: "og:title", content: "Contact — Academic Information Dissemination System" },
+      {
+        property: "og:title",
+        content: "About Us — Area-Based Academic Information Dissemination System (BLE)",
+      },
       {
         property: "og:description",
         content: "Contact information and office directory for Colegio de Montalban.",

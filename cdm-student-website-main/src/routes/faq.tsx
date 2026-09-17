@@ -5,15 +5,17 @@ import { PageHeader } from "@/components/PageHeader";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "FAQ — CdM Student Portal" },
+      { title: "FAQ — Area-Based Academic Information Dissemination System" },
       {
         name: "description",
-        content: "Frequently asked questions about the Colegio de Montalban student portal.",
+        content:
+          "Frequently asked questions about the Area-Based Academic Information Dissemination System using Bluetooth Low Energy (BLE) Beacon Technology at Colegio de Montalban.",
       },
-      { property: "og:title", content: "FAQ — CdM Student Portal" },
+      { property: "og:title", content: "FAQ — Area-Based Academic Information Dissemination System" },
       {
         property: "og:description",
-        content: "Frequently asked questions about the CdM student portal.",
+        content:
+          "How BLE beacons deliver area-based academic announcements at Colegio de Montalban, plus concerns and support.",
       },
     ],
   }),
@@ -22,34 +24,54 @@ export const Route = createFileRoute("/faq")({
 
 const faqs = [
   {
-    question: "What is the CdM Student Portal?",
+    question: "What is this system / capstone about?",
     answer:
-      "The CdM Student Portal is your one-stop online hub for official announcements and for submitting complaints, questions, or suggestions directly to the appropriate institute or office at Colegio de Montalban.",
+      "This website is the web component of our capstone titled “Area-Based Academic Information Dissemination System using Bluetooth Low Energy (BLE) Beacon Technology.” It delivers official academic announcements from Colegio de Montalban based on area/location via BLE beacons, and gives students a direct channel to submit complaints, questions, or suggestions to the right institute or office.",
   },
   {
-    question: "Who can use this portal?",
+    question: "How does the BLE beacon technology work?",
     answer:
-      "Anyone can view public announcements. Students of Colegio de Montalban can submit concerns through the Submit Concern page — no account needed.",
+      "BLE beacons are small devices placed around campus (e.g., Registrar, institute buildings, AVR, gates). When a student with Bluetooth enabled is near a beacon's area, the system can push the announcement that applies to that area — so you only get updates relevant to where you are, instead of one noisy bulletin board for everyone.",
+  },
+  {
+    question: "Do I need to turn on Bluetooth or install anything?",
+    answer:
+      "To receive area-based notifications on-site, turn on Bluetooth on your phone so it can detect nearby beacons. This website works without Bluetooth — you can read all announcements, submit concerns, and contact offices here from any device with internet. No account is needed to view announcements or submit a concern as a guest.",
+  },
+  {
+    question: "What kind of announcements will I receive?",
+    answer:
+      "Official academic updates such as class suspensions, enrollment schedules, OJT orientations, scholarship applications, and system maintenance. Announcements marked “Critical” are urgent (e.g., suspension, maintenance), while “Normal” covers routine information. The latest announcements are also listed on the Home and Announcements pages even if you are off-campus.",
+  },
+  {
+    question: "Who can use this system?",
+    answer:
+      "Anyone can view public announcements. Students of Colegio de Montalban — including 4th-year students who are off-campus for OJT — can submit concerns through the Submit Concern page with no account needed. Admin staff use the Admin dashboard to publish announcements and manage concerns.",
   },
   {
     question: "How do I submit a concern?",
     answer:
-      "Go to the 'Submit Concern' page, fill out your details, select the appropriate institute and type of concern, write your message, and click 'Submit Concern'. Make sure to consent to the data privacy notice before submitting.",
+      "Go to the 'Submit Concern' page, fill out your name, student number (format YY-NNNNN, e.g., 24-00123), year & section, institute and program, select the type (Complaint, Question, or Suggestion), write your message, tick the Data Privacy consent, and click 'Submit Concern'. Your concern is routed to the appropriate institute or office.",
   },
   {
     question: "Which institutes are supported?",
     answer:
-      "The portal supports three institutes: the Institute of Computer Studies (ICS), the Institute of Business and Entrepreneurship (IBE), and the Institute of Teacher Education (ITE).",
+      "Three institutes: the Institute of Computer Studies (ICS), the Institute of Business and Entrepreneurship (IBE), and the Institute of Teacher Education (ITE). Choose the institute and program that match your enrollment so your concern reaches the right office.",
+  },
+  {
+    question: "I am off-campus. Will I still get updates?",
+    answer:
+      "Yes. BLE area alerts only trigger when you are near a beacon on campus, but all announcements are mirrored on this website (Home and Announcements pages, refreshed automatically). Off-campus and OJT students can stay updated here and still submit concerns online.",
   },
   {
     question: "Is my personal information safe?",
     answer:
-      "Yes. We collect only the information needed to address your concern and process it in accordance with the Data Privacy Act of 2012 (RA 10173). Please review our Privacy Policy for full details.",
+      "Yes. We collect only what is needed to address your concern (name, student number, section, program, and message) and process it in accordance with the Data Privacy Act of 2012 (RA 10173). Please review our Privacy Policy for full details.",
   },
   {
     question: "Who do I contact for other inquiries?",
     answer:
-      "You can reach the Registrar, Accounting, Scholarship, or Guidance offices through the Contact page. Our office directory lists the emails and hours for each office.",
+      "You can reach the Registrar, Accounting, Scholarship, or Guidance offices through the Contact / About Us page. The office directory there lists emails and office hours for each office.",
   },
 ];
 
@@ -106,9 +128,9 @@ function FaqPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <PageHeader
-        badge="Support"
+        badge="Support · BLE Beacon Capstone"
         title="Frequently Asked Questions"
-        subtitle="Answers to common questions about the CdM Student Portal and submitting concerns."
+        subtitle="How the Area-Based Academic Information Dissemination System using BLE Beacon Technology works at Colegio de Montalban."
       />
 
       <div className="space-y-3">

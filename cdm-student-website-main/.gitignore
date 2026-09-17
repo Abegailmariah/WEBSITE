@@ -49,3 +49,12 @@ tsc_check.txt
 *.sw?
 
 .vercel
+
+# SQLite tmp/scratch
+backend/*.db.*
+backend/*.tmp
+
+# Backend scratch / test scripts - never deploy
+backend/inspect-db.mjs
+backend/test-*.mjs
+backend/tsc*.txt

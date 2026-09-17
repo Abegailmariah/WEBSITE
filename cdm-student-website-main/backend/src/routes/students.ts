@@ -24,11 +24,18 @@ import {
 
 const router = Router();
 
+// Cross-site cookies (Vercel frontend + separate API host) require
+// SameSite=None + Secure. Same-site/local dev uses Lax.
+// COOKIE_SAMESITE=none + NODE_ENV=production on the backend host.
+const COOKIE_SAMESITE: "none" | "lax" =
+  process.env.COOKIE_SAMESITE === "none" ? "none" : "lax";
+const COOKIE_SECURE = process.env.NODE_ENV === "production" || COOKIE_SAMESITE === "none";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "lax" as const,
+  sameSite: COOKIE_SAMESITE,
   path: "/",
-  secure: process.env.NODE_ENV === "production",
+  secure: COOKIE_SECURE,
   maxAge: 12 * 60 * 60 * 1000, // 12 hours, matches session TTL
 };
 

@@ -30,12 +30,13 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/submit-concern")({
   head: () => ({
     meta: [
-      { title: "Submit a Concern — Academic Information Dissemination System" },
+      { title: "Submit a Concern — Area-Based Academic Information Dissemination System" },
       {
         name: "description",
-        content: "Submit a complaint, question, or suggestion to Colegio de Montalban.",
+        content:
+          "Submit a complaint, question, or suggestion to Colegio de Montalban through the BLE beacon information system.",
       },
-      { property: "og:title", content: "Submit a Concern — CdM" },
+      { property: "og:title", content: "Submit a Concern — CdM BLE Info System" },
       {
         property: "og:description",
         content: "Send complaints, questions, or suggestions directly to your institute.",

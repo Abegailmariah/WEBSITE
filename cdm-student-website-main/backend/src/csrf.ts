@@ -58,11 +58,13 @@ export function csrfCookieBootstrap(req: Request, res: Response, next: NextFunct
     // The CSRF token is NOT a session secret — the session auth cookies remain
     // httpOnly. This cookie must be readable by JavaScript so the SPA can echo
     // it back in the X-CSRF-Token header (double-submit pattern).
+    // Cross-site (Vercel + separate API host) needs SameSite=None + Secure.
+    const sameSiteNone = process.env.COOKIE_SAMESITE === "none";
     res.cookie(CSRF_COOKIE_NAME, token, {
       httpOnly: false,
-      sameSite: "lax",
+      sameSite: sameSiteNone ? "none" : "lax",
       path: "/",
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" || sameSiteNone,
     });
   }
 

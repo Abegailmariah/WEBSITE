@@ -90,7 +90,11 @@ app.use(requireCsrf);
 
 // ── Health Check ───────────────────────────────────────────────────
 app.get("/", (_req, res) => {
-  res.json({ status: "ok", service: "CdM Student Portal API", version: "2.0.0" });
+  res.json({
+    status: "ok",
+    service: "Area-Based Academic Information Dissemination System API",
+    version: "2.0.0",
+  });
 });
 
 // ── Routes ─────────────────────────────────────────────────────────
@@ -121,7 +125,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════╗
-║     CdM Student Portal — API Server         ║
+║     Area-Based Info Dissemination — API Server     ║
 ║──────────────────────────────────────────────║
 ║  Listening on :${String(PORT).padEnd(35)}║
 ║  Announcements : ${`http://localhost:${PORT}/announcements`.padEnd(32)}║

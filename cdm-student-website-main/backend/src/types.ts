@@ -3,6 +3,8 @@ export interface Announcement {
   title: string;
   date: string;
   priority: "Critical" | "Normal";
+  /** Campus area this announcement applies to (mirrored to the BLE beacon in that area). */
+  area: string;
   content: string;
   created_at?: string;
 }

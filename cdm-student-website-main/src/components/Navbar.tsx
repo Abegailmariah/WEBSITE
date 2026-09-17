@@ -24,7 +24,7 @@ export function Navbar() {
           <Logo className="w-10 h-10 shrink-0 rounded-full shadow-sm group-hover:scale-105 transition-transform" />
           <div className="leading-tight">
             <div className="font-semibold text-white font-display">Colegio de Montalban</div>
-            <div className="text-xs text-secondary/90">Academic Information Dissemination System</div>
+            <div className="text-xs text-secondary/90">Area-Based Info Dissemination (BLE Beacons)</div>
           </div>
         </Link>
 

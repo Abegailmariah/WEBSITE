@@ -23,11 +23,18 @@ import {
 
 const router = Router();
 
+// Cross-site cookies (Vercel frontend + separate API host) require
+// SameSite=None + Secure. Same-site/local dev uses Lax.
+// COOKIE_SAMESITE=none + NODE_ENV=production on the backend host.
+const COOKIE_SAMESITE: "none" | "lax" =
+  process.env.COOKIE_SAMESITE === "none" ? "none" : "lax";
+const COOKIE_SECURE = process.env.NODE_ENV === "production" || COOKIE_SAMESITE === "none";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "lax" as const,
+  sameSite: COOKIE_SAMESITE,
   path: "/",
-  secure: process.env.NODE_ENV === "production",
+  secure: COOKIE_SECURE,
   maxAge: 8 * 60 * 60 * 1000, // 8 hours, matches session TTL
 };
 
@@ -246,13 +253,15 @@ router.put("/announcements/:id", requireAuth, async (req: Request, res: Response
       return;
     }
 
-    const { title, date, priority, content } = req.body ?? {};
+    const { title, date, priority, area, content } = req.body ?? {};
 
     const errors: string[] = [];
     if (!title || typeof title !== "string") errors.push("title is required");
     if (!date || typeof date !== "string") errors.push("date is required");
     if (!priority || !["Critical", "Normal"].includes(priority))
       errors.push("priority must be 'Critical' or 'Normal'");
+    if (!area || typeof area !== "string" || !area.trim())
+      errors.push("area is required (campus area whose BLE beacon mirrors this)");
     if (!content || typeof content !== "string") errors.push("content is required");
 
     if (errors.length > 0) {
@@ -260,7 +269,13 @@ router.put("/announcements/:id", requireAuth, async (req: Request, res: Response
       return;
     }
 
-    const announcement = await updateAnnouncement(id, { title, date, priority, content });
+    const announcement = await updateAnnouncement(id, {
+      title,
+      date,
+      priority,
+      area: String(area).trim(),
+      content,
+    });
     if (!announcement) {
       res.status(404).json({ error: "Announcement not found" });
       return;

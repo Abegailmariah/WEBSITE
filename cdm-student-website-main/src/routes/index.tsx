@@ -103,50 +103,9 @@ function Index() {
   });
 
   const latest = announcements.slice(0, 3);
-  const criticalCount = announcements.filter((a) => a.priority === "Critical").length;
-  const criticalItems = announcements.filter((a) => a.priority === "Critical").slice(0, 3);
 
   return (
     <div className="min-h-[calc(100vh-64px)]">
-      {/* Critical alert banner */}
-      {!isLoading && criticalCount > 0 && (
-        <div className="bg-destructive text-white" role="alert">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className="inline-flex items-center gap-2 font-semibold">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" />
-              </svg>
-              {criticalCount} critical {criticalCount === 1 ? "alert" : "alerts"}
-            </span>
-            <span className="text-white/85 hidden sm:inline" aria-hidden="true">
-              —
-            </span>
-            <span className="text-white/90">
-              {criticalItems.map((a) => a.title).join(" · ")}
-            </span>
-            <Link
-              to="/announcements"
-              search={{ priority: "Critical" }}
-              className="ml-auto font-semibold underline underline-offset-4 hover:text-white/90 whitespace-nowrap"
-            >
-              View critical →
-            </Link>
-          </div>
-        </div>
-      )}
       {/* Hero */}
       <section className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground relative overflow-hidden">
         {/* Decorative blobs */}
@@ -211,16 +170,12 @@ function Index() {
             </div>
 
             {/* Stats / illustration panel */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm">
                 <div className="text-3xl font-extrabold text-white">{announcements.length}</div>
                 <p className="text-sm text-secondary/80 mt-1">Active Announcements</p>
               </div>
               <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm">
-                <div className="text-3xl font-extrabold text-white">{criticalCount}</div>
-                <p className="text-sm text-secondary/80 mt-1">Critical Alerts</p>
-              </div>
-              <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm col-span-2">
                 <div className="text-xl font-bold text-white">3 Institutes Supported</div>
                 <p className="text-sm text-secondary/80 mt-1">
                   ICS, IBE, and ITE — concerns routed to the right office.
@@ -295,6 +250,12 @@ function Index() {
                     {a.priority}
                   </span>
                 </div>
+                <span
+                  className="self-start inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-2"
+                  title="Campus area whose BLE beacon mirrors this announcement"
+                >
+                  📍 {a.area || "Campus-Wide"}
+                </span>
                 <h3 className="text-lg font-semibold text-foreground">{a.title}</h3>
                 <p className="text-sm text-muted-foreground mt-2 line-clamp-3 whitespace-pre-line">
                   {a.content}

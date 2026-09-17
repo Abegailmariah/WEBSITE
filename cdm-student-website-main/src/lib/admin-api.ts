@@ -29,6 +29,7 @@ export type AdminAnnouncement = {
   title: string;
   date: string;
   priority: "Critical" | "Normal";
+  area: string;
   content: string;
 };
 
@@ -179,6 +180,7 @@ export function updateAnnouncement(
     title: string;
     date: string;
     priority: "Critical" | "Normal";
+    area: string;
     content: string;
   },
 ): Promise<AdminAnnouncement> {
