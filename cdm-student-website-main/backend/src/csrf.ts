@@ -68,6 +68,17 @@ export function csrfCookieBootstrap(req: Request, res: Response, next: NextFunct
     });
   }
 
+  // Always echo the token in a response header as well.
+  //
+  // Why: when the frontend and API live on DIFFERENT sites (Vercel + Render),
+  // the browser scopes a cookie set by the API host to the API host only —
+  // document.cookie on the frontend origin can never read it. Without this
+  // header the SPA would have no way to learn the token and every
+  // state-changing request would fail with 403 "Invalid or missing CSRF token".
+  // The frontend reads it via a GET bootstrap (see src/lib/csrf.ts) and the
+  // value is exposed to CORS clients through `exposedHeaders` in index.ts.
+  res.setHeader(CSRF_HEADER_NAME, token);
+
   next();
 }
 

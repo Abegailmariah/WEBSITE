@@ -44,6 +44,11 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    // Allow the SPA to read the CSRF bootstrap header. Without this, a
+    // cross-origin (Vercel -> Render) fetch can send/receive cookies but
+    // JavaScript cannot read custom response headers, so the double-submit
+    // token could never be obtained. See csrf.ts.
+    exposedHeaders: ["X-CSRF-Token"],
   }),
 );
 

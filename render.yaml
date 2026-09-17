@@ -1,0 +1,66 @@
+# Render Blueprint — backend API
+# Area-Based Academic Information Dissemination System using BLE Beacon Technology
+#
+# The frontend is hosted on Vercel. This file deploys ONLY the Express API in
+# cdm-student-website-main/backend.
+#
+# How to use it:
+#   1. Render Dashboard → New + → Blueprint
+#   2. Connect the GitHub repo (Abegailmariah/WEBSITE)
+#   3. Render reads this file and provisions the service, prompting for
+#      ADMIN_PIN (it is never stored in Git).
+#   4. Copy the resulting URL (https://cdm-ble-api.onrender.com) into the
+#      VITE_* environment variables on Vercel, then redeploy the frontend.
+#
+# See DEPLOYMENT.md for the full checklist.
+
+services:
+  - type: web
+    name: cdm-ble-api
+    runtime: node
+    # "free" has an EPHEMERAL filesystem — see the disk section at the bottom.
+    plan: free
+    # Closest region to the Philippines. Other options: oregon, ohio,
+    # virginia, frankfurt.
+    region: singapore
+    rootDir: cdm-student-website-main/backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22.16.0"
+      - key: NODE_ENV
+        value: production
+      # Cross-site cookies (Vercel frontend + Render API) require
+      # SameSite=None; Secure, which NODE_ENV=production turns on.
+      - key: COOKIE_SAMESITE
+        value: none
+      # The dashboard prompts for this during Blueprint creation and stores it
+      # as a secret. Generate one with:
+      #   node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+      - key: ADMIN_PIN
+        sync: false
+      - key: SESSION_TTL_MS
+        value: "28800000"
+      # Must include the exact Vercel origin (scheme + host, no trailing slash).
+      - key: CORS_ORIGINS
+        value: https://cdm-student-website-main.vercel.app
+
+    # ── Persistent storage (requires a PAID plan) ──────────────────────
+    # Render's free tier has an ephemeral filesystem: cdm_portal.db is deleted
+    # on every restart or redeploy, so announcements and concerns revert to the
+    # seed data (and admin/student sessions are lost). Persistent disks are
+    # only available on paid instance types.
+    #
+    # To persist real data: set `plan: starter` above and uncomment the block
+    # below together with the DB_PATH variable. The app reads DB_PATH
+    # (see backend/src/database.ts) and writes the SQLite file there.
+    #
+    # disk:
+    #   name: cdm-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    #
+    #   - key: DB_PATH
+    #     value: /var/data/cdm_portal.db

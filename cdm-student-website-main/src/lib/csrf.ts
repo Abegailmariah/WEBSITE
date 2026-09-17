@@ -17,6 +17,12 @@
 export const CSRF_COOKIE_NAME = "cdm_csrf_token";
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
+// The backend echoes the active token in this response header (see
+// backend/src/csrf.ts). It is the only way for a cross-origin SPA to learn the
+// token, because document.cookie can only read cookies belonging to the
+// frontend's own origin.
+let cachedToken = "";
+
 function readCookie(name: string): string {
   if (typeof document === "undefined") return "";
   const match = document.cookie
@@ -27,37 +33,46 @@ function readCookie(name: string): string {
 }
 
 // Returns the CSRF header value to attach to state-changing requests, or ""
-// if no token cookie is present.
+// if no token is known yet.
 export function getCsrfHeader(): Record<string, string> {
-  const token = readCookie(CSRF_COOKIE_NAME);
+  const token = cachedToken || readCookie(CSRF_COOKIE_NAME);
   if (!token) return {};
   return { [CSRF_HEADER_NAME]: token };
 }
 
-// Same as getCsrfHeader(), but ensures the token cookie exists first by making a
-// single GET to the backend when it is missing.
+// Same as getCsrfHeader(), but makes sure a *server-valid* token is known by
+// performing one GET to the backend first.
 //
-// The backend's csrfCookieBootstrap middleware sets cdm_csrf_token on ANY
-// response, so a GET to the API origin is enough to bootstrap it. This matters
-// for pages that mutate state without calling the API beforehand (such as
-// /submit-concern), where the cookie would otherwise not exist yet and the
-// request would be rejected with "Invalid or missing CSRF token".
+// Why the extra GET is not skipped even when a token is already present: the
+// backend keeps issued tokens in memory, so after a server restart (or on a
+// host that sleeps, like a free Render instance) a previously issued token is
+// no longer valid. Re-bootstrapping lets the server hand back a token it
+// actually knows about, which turns a permanent "403 Invalid or missing CSRF
+// token" into a transparent retry.
 //
 // `endpoint` is any full URL belonging to the backend; only its origin is used.
 export async function getCsrfHeaderAsync(endpoint: string): Promise<Record<string, string>> {
-  const existing = getCsrfHeader();
-  if (Object.keys(existing).length > 0) return existing;
-
   try {
     const origin = new URL(endpoint).origin;
-    await fetch(`${origin}/`, {
+    const res = await fetch(`${origin}/`, {
       method: "GET",
       credentials: "include",
       headers: { accept: "application/json" },
     });
+
+    // Cross-origin path (Vercel -> Render): read the exposed response header.
+    const headerToken = res.headers.get(CSRF_HEADER_NAME);
+    if (headerToken) cachedToken = headerToken;
+
+    // Same-origin path (local dev): the readable cookie is available directly.
+    if (!cachedToken) {
+      const cookieToken = readCookie(CSRF_COOKIE_NAME);
+      if (cookieToken) cachedToken = cookieToken;
+    }
   } catch {
     // Ignore bootstrap failures — the real request will surface any error.
   }
 
   return getCsrfHeader();
 }
+

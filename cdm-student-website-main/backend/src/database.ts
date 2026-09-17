@@ -6,7 +6,18 @@ import { hashPassword } from "./student-auth.js";
 import type { Announcement, Concern, AuditLog, Student } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.resolve(__dirname, "..", "cdm_portal.db");
+
+// Location of the SQLite file.
+//
+// Default: backend/cdm_portal.db (next to the built dist/ directory).
+// Override with DB_PATH when the data must live on a mounted volume, e.g. a
+// Render persistent disk: DB_PATH=/var/data/cdm_portal.db
+// Without a persistent volume the host's filesystem is ephemeral, so the
+// database (and therefore every announcement/concern) is recreated from the
+// seed data whenever the service restarts or redeploys.
+const DB_PATH = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.resolve(__dirname, "..", "cdm_portal.db");
 
 let db: SqlJsDatabase | null = null;
 

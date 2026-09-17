@@ -1,4 +1,4 @@
-import { getCsrfHeader } from "./csrf";
+import { getCsrfHeaderAsync } from "./csrf";
 
 export type AdminStats = {
   announcements: number;
@@ -58,13 +58,16 @@ export function getAdminEndpoint(): string {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
   const isStateChanging = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
+  // Attach the CSRF token for state-changing requests (double-submit).
+  // The async variant also works cross-origin (Vercel -> Render), where the
+  // token cookie belongs to the API origin and cannot be read from here.
+  const csrfHeaders = isStateChanging ? await getCsrfHeaderAsync(getAdminEndpoint()) : {};
   const res = await fetch(`${getAdminEndpoint()}${path}`, {
     ...options,
     credentials: "include",
     headers: {
       "content-type": "application/json",
-      // Attach the CSRF token for state-changing requests (double-submit).
-      ...(isStateChanging ? getCsrfHeader() : {}),
+      ...csrfHeaders,
       ...(options.headers as Record<string, string> | undefined),
     },
   });
@@ -91,7 +94,8 @@ export async function adminLogin(pin: string): Promise<string> {
     credentials: "include",
     headers: {
       "content-type": "application/json",
-      ...getCsrfHeader(),
+      // Bootstraps a server-valid CSRF token first (works cross-origin too).
+      ...(await getCsrfHeaderAsync(getAdminEndpoint())),
     },
     body: JSON.stringify({ pin }),
   });
