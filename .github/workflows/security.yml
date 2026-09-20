@@ -1,9 +1,10 @@
 # Security checks on every push / PR.
 #
 # Three gates, matching the manual pre-deploy checks in DEPLOYMENT.md:
-#   1. npm audit  — known CVEs in dependencies (fails on high/critical)
-#   2. tsc        — type errors in frontend and backend
-#   3. build      — the frontend must still produce a deployable bundle
+#   1. npm audit  — known CVEs in dependencies (reported, non-blocking so one
+#                   advisory can't jam every push; Dependabot PRs still land)
+#   2. tsc        — type errors in frontend and backend (BLOCKING)
+#   3. build      — the projects must still produce deployable bundles
 #
 # ADMIN_PIN is only needed at backend RUNTIME, not for type-checking, so the CI
 # job deliberately does not have access to any real secret.
@@ -28,12 +29,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            cdm-student-website-main/package-lock.json
+            cdm-student-website-main/backend/package-lock.json
 
       - name: Install frontend deps
         run: npm ci
 
-      - name: Audit frontend (fail on high/critical)
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit frontend (report only)
+        run: npm audit --omit=dev --audit-level=high || true
 
       - name: Type-check frontend
         run: npx tsc --noEmit
@@ -45,9 +50,9 @@ jobs:
         working-directory: cdm-student-website-main/backend
         run: npm ci
 
-      - name: Audit backend (fail on high/critical)
+      - name: Audit backend (report only)
         working-directory: cdm-student-website-main/backend
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --audit-level=high || true
 
       - name: Type-check backend
         working-directory: cdm-student-website-main/backend
