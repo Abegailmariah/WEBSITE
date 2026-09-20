@@ -6,8 +6,14 @@ import {
   requireAuth,
   isAuthenticated,
   COOKIE_NAME,
+  ADMIN_COOKIE_NAMES,
+  SESSION_IDLE_TTL_MS,
   extractToken,
+  positiveIntEnv,
 } from "../auth.js";
+import { audit, clientIp } from "../audit.js";
+import { announcementInputSchema, zodErrorMessages } from "../validation.js";
+
 import {
   getAllConcerns,
   getAllConcernsRaw,
@@ -17,7 +23,6 @@ import {
   deleteAnnouncement,
   updateAnnouncement,
   getStats,
-  addAuditLog,
   getAuditLog,
 } from "../database.js";
 
@@ -35,22 +40,73 @@ const COOKIE_OPTIONS = {
   sameSite: COOKIE_SAMESITE,
   path: "/",
   secure: COOKIE_SECURE,
-  maxAge: 8 * 60 * 60 * 1000, // 8 hours, matches session TTL
+  // Matches the sliding idle session TTL (see backend/src/auth.ts).
+  maxAge: SESSION_IDLE_TTL_MS,
 };
+
+// ── Admin login brute-force lockout ─────────────────────────────────
+// The per-IP rate limiter in index.ts slows an attacker down; this lockout
+// stops them, mirroring the pattern already used for student logins
+// (backend/src/student-auth.ts). Keyed by client IP because the admin PIN is a
+// shared secret with no username to key on.
+//
+// Note: like every in-memory control here, the counters reset on restart and
+// are per-instance. Put the API behind Cloudflare/WAF for edge-level limits.
+const MAX_FAILED_ATTEMPTS = positiveIntEnv(process.env.ADMIN_MAX_FAILED, 5);
+const LOCKOUT_MS = positiveIntEnv(process.env.ADMIN_LOCKOUT_MS, 15 * 60 * 1000);
+const failedAttempts = new Map<string, { count: number; lockUntil: number }>();
+
+function lockoutRemainingMs(ip: string): number {
+  const entry = failedAttempts.get(ip);
+  if (!entry) return 0;
+  // lockUntil === 0 means "still counting failures", NOT "lock expired" —
+  // delete it here and the counter would reset on every attempt.
+  if (entry.lockUntil === 0) return 0;
+  if (entry.lockUntil > Date.now()) return entry.lockUntil - Date.now();
+  // Lock expired: clear it so the next failure starts a fresh count.
+  failedAttempts.delete(ip);
+  return 0;
+}
+
+function recordFailedLogin(ip: string): void {
+  const entry = failedAttempts.get(ip) ?? { count: 0, lockUntil: 0 };
+  entry.count += 1;
+  if (entry.count >= MAX_FAILED_ATTEMPTS) {
+    entry.lockUntil = Date.now() + LOCKOUT_MS;
+    entry.count = 0; // reset the counter once locked
+  }
+  failedAttempts.set(ip, entry);
+}
+
 
 // POST /admin/login — verify PIN, create a session token, and set an httpOnly cookie
 router.post("/login", (req: Request, res: Response) => {
+  const ip = clientIp(req);
+  const remaining = lockoutRemainingMs(ip);
+  if (remaining > 0) {
+    res.setHeader("Retry-After", String(Math.ceil(remaining / 1000)));
+    res.status(429).json({
+      error: `Too many failed attempts. Try again in ${Math.ceil(remaining / 60000)} minute(s).`,
+    });
+    return;
+  }
+
   const { pin } = req.body ?? {};
 
   if (typeof pin !== "string" || !verifyPin(pin)) {
+    recordFailedLogin(ip);
+    audit(req, "admin.login_failed", "Invalid PIN");
     res.status(401).json({ error: "Invalid PIN" });
     return;
   }
 
   const token = createSession();
   res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
-  awaitAudit("admin.login", "Admin logged in");
-  res.json({ token });
+  audit(req, "admin.login", "Admin logged in");
+  // The session token is deliberately NOT returned in the body: it lives only in
+  // the httpOnly cookie so an XSS payload cannot exfiltrate it. The SPA never
+  // needs the raw value (see src/lib/admin-api.ts -> checkAdminSession()).
+  res.json({ ok: true });
 });
 
 // GET /admin/session — check whether the current cookie/session is valid
@@ -64,9 +120,13 @@ router.post("/logout", requireAuth, (req: Request, res: Response) => {
   const { adminToken } = req as Request & { adminToken?: string };
   if (adminToken) {
     destroySession(adminToken);
-    awaitAudit("admin.logout", "Admin logged out");
+    audit(req, "admin.logout", "Admin logged out");
   }
-  res.clearCookie(COOKIE_NAME, { path: "/" });
+  // Clear both the current (possibly __Host-) name and the pre-rollout legacy
+  // name so no stale cookie survives a logout.
+  for (const name of ADMIN_COOKIE_NAMES) {
+    res.clearCookie(name, { path: "/" });
+  }
   res.json({ ok: true });
 });
 
@@ -147,7 +207,17 @@ router.get("/concerns/export", requireAuth, async (req: Request, res: Response) 
     );
 
     const csv = [header, ...rows].join("\r\n");
+
+    // A CSV export is the single biggest PII egress in the system, so it is
+    // always recorded with actor + origin.
+    audit(
+      req,
+      "concern.export",
+      `Exported ${concerns.length} concern(s)${search ? ` (search: ${search})` : ""}`,
+    );
+
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
+
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="concerns-${new Date().toISOString().slice(0, 10)}.csv"`,
@@ -169,7 +239,7 @@ router.delete("/concerns/:id", requireAuth, async (req: Request, res: Response) 
     }
 
     await deleteConcern(id);
-    awaitAudit("concern.delete", `Deleted concern #${id}`);
+    audit(req, "concern.delete", `Deleted concern #${id}`);
     res.json({ ok: true, id });
   } catch (err) {
     console.error("[Admin] Failed to delete concern:", err);
@@ -206,7 +276,7 @@ router.patch("/concerns/:id", requireAuth, async (req: Request, res: Response) =
       return;
     }
 
-    awaitAudit("concern.update", `Updated concern #${id} → status ${status}`);
+    audit(req, "concern.update", `Updated concern #${id} → status ${status}`);
     res.json(concern);
   } catch (err) {
     console.error("[Admin] Failed to update concern:", err);
@@ -236,7 +306,7 @@ router.delete("/announcements/:id", requireAuth, async (req: Request, res: Respo
     }
 
     await deleteAnnouncement(id);
-    awaitAudit("announcement.delete", `Deleted announcement #${id}`);
+    audit(req, "announcement.delete", `Deleted announcement #${id}`);
     res.json({ ok: true, id });
   } catch (err) {
     console.error("[Admin] Failed to delete announcement:", err);
@@ -253,45 +323,26 @@ router.put("/announcements/:id", requireAuth, async (req: Request, res: Response
       return;
     }
 
-    const { title, date, priority, area, content } = req.body ?? {};
-
-    const errors: string[] = [];
-    if (!title || typeof title !== "string") errors.push("title is required");
-    if (!date || typeof date !== "string") errors.push("date is required");
-    if (!priority || !["Critical", "Normal"].includes(priority))
-      errors.push("priority must be 'Critical' or 'Normal'");
-    if (!area || typeof area !== "string" || !area.trim())
-      errors.push("area is required (campus area whose BLE beacon mirrors this)");
-    if (!content || typeof content !== "string") errors.push("content is required");
-
-    if (errors.length > 0) {
-      res.status(400).json({ errors });
+    const parsed = announcementInputSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ errors: zodErrorMessages(parsed.error) });
       return;
     }
 
-    const announcement = await updateAnnouncement(id, {
-      title,
-      date,
-      priority,
-      area: String(area).trim(),
-      content,
-    });
+    const { title, date, priority, area, content } = parsed.data;
+
+    const announcement = await updateAnnouncement(id, { title, date, priority, area, content });
     if (!announcement) {
       res.status(404).json({ error: "Announcement not found" });
       return;
     }
 
-    awaitAudit("announcement.update", `Updated announcement #${id} — ${title}`);
+    audit(req, "announcement.update", `Updated announcement #${id} — ${title}`);
     res.json(announcement);
   } catch (err) {
     console.error("[Admin] Failed to update announcement:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-// Helper: fire-and-forget audit logging so it never blocks the response.
-function awaitAudit(action: string, detail?: string): void {
-  void addAuditLog(action, detail);
-}
 
 export default router;

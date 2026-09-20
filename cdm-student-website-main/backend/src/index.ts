@@ -9,11 +9,24 @@ import rateLimit from "express-rate-limit";
 import announcementsRouter from "./routes/announcements.js";
 import concernsRouter from "./routes/concerns.js";
 import adminRouter from "./routes/admin.js";
-import studentsRouter from "./routes/students.js";
+import { getStats } from "./database.js";
 import { csrfCookieBootstrap, requireCsrf } from "./csrf.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "8000", 10);
+
+// ── Proxy awareness ────────────────────────────────────────────────
+// Render (and Vercel) terminate TLS in front of the app, so req.ip and the
+// protocol come from the X-Forwarded-* headers. Without this, EVERY client
+// behind the proxy shares one IP address: the rate limiters below would count
+// all visitors as a single client (one attacker could then lock out real
+// admins and the whole campus at once), and audit entries would record the
+// proxy instead of the actor. `1` = trust exactly one hop.
+app.set("trust proxy", 1);
+
+// Helmet already removes it; being explicit documents the intent.
+app.disable("x-powered-by");
+
 
 // ── Security Headers (Helmet) ──────────────────────────────────────
 app.use(helmet());
@@ -77,15 +90,21 @@ const adminMutationLimiter = rateLimit({
   message: { error: "Too many admin actions. Please slow down." },
 });
 
-const studentLoginLimiter = rateLimit({
+// Broad abuse ceiling for the whole API. Deliberately generous — its job is to
+// stop one client from saturating the free-tier instance, not to shape normal
+// traffic (the dashboard makes a handful of requests per action).
+const globalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 attempts per minute
+  max: 600, // 600 requests per minute per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Too many login attempts. Try again later." },
+  message: { error: "Too many requests. Please slow down." },
 });
 
 // ── Middleware ──────────────────────────────────────────────────────
+// Rate limiting runs before body parsing so a blocked request is rejected
+// without allocating a JSON parser for it.
+app.use(globalLimiter);
 app.use(express.json({ limit: "16kb" }));
 
 // Provide a CSRF cookie to every client and validate state-changing
@@ -102,13 +121,34 @@ app.get("/", (_req, res) => {
   });
 });
 
+// ── Health Check ───────────────────────────────────────────────────
+// Liveness/readiness probe. Unlike "/" this actually touches the datastore, so
+// a missing or corrupt SQLite file reports unhealthy instead of "ok".
+app.get("/health", async (_req, res) => {
+  try {
+    const stats = await getStats();
+    res.json({
+      status: "ok",
+      database: "ok",
+      announcements: stats.announcements,
+      concerns: stats.concerns,
+    });
+  } catch (err) {
+    console.error("[Health] Database check failed:", err);
+    res.status(503).json({ status: "error", database: "unavailable" });
+  }
+});
+
 // ── Routes ─────────────────────────────────────────────────────────
 app.use("/announcements", announcementsRouter);
 app.use("/submit-concern", concernSubmitLimiter, concernsRouter);
 app.use("/admin/login", adminLoginLimiter);
 app.use("/admin", adminMutationLimiter, adminRouter);
-app.use("/student/login", studentLoginLimiter);
-app.use("/student", studentsRouter);
+
+// NOTE: the /student/* router was removed deliberately. It had no frontend
+// consumer (the student dashboard was dropped) yet stayed reachable, which meant
+// public account creation, student-number enumeration and an extra data path
+// for no benefit. See SECURITY.md before reintroducing it.
 
 // ── 404 Handler ────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -122,6 +162,17 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
     res.status(403).json({ error: "Origin not allowed by CORS" });
     return;
   }
+
+  // body-parser rejections (malformed JSON, payload over the 16kb limit) are
+  // CLIENT errors. Reporting them as 500 both misleads the caller and floods the
+  // logs with stack traces from hostile or broken input.
+  const status = (err as Error & { status?: number; statusCode?: number }).status ??
+    (err as Error & { statusCode?: number }).statusCode;
+  if (typeof status === "number" && status >= 400 && status < 500) {
+    res.status(status).json({ error: status === 413 ? "Payload too large" : "Bad request" });
+    return;
+  }
+
   console.error("[Server] Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });

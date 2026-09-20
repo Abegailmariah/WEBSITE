@@ -34,6 +34,9 @@ export const Route = createFileRoute("/admin")({
         content:
           "Admin console for publishing area-based announcements disseminated via Bluetooth Low Energy (BLE) beacons at Colegio de Montalban, and for managing student concerns.",
       },
+      // The console is PIN-protected; keep it out of search indexes (also
+      // disallowed in public/robots.txt) so scanners don't get a free target.
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: AdminPage,
@@ -516,7 +519,13 @@ function NewAnnouncementForm({ onCreated }: { onCreated: (a: Announcement) => vo
     setError(null);
     try {
       const resolvedArea = area === "Other" ? customArea.trim() : area;
-      const created = await createAnnouncement({ title, date, priority, area: resolvedArea, content });
+      const created = await createAnnouncement({
+        title,
+        date,
+        priority,
+        area: resolvedArea,
+        content,
+      });
       onCreated(created);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create announcement");
@@ -632,9 +641,7 @@ function EditAnnouncementForm({
   const [date, setDate] = useState(announcement.date);
   const [priority, setPriority] = useState<"Critical" | "Normal">(announcement.priority);
   const [area, setArea] = useState<string>(
-    (CAMPUS_AREAS as readonly string[]).includes(announcement.area)
-      ? announcement.area
-      : "Other",
+    (CAMPUS_AREAS as readonly string[]).includes(announcement.area) ? announcement.area : "Other",
   );
   const [customArea, setCustomArea] = useState<string>(
     (CAMPUS_AREAS as readonly string[]).includes(announcement.area) ? "" : announcement.area,

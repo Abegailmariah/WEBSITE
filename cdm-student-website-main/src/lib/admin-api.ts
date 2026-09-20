@@ -88,7 +88,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function adminLogin(pin: string): Promise<string> {
+// Returns nothing on success: the session lives ONLY in the API's httpOnly
+// cookie. The server deliberately does not echo the token in the response body
+// (see backend/src/routes/admin.ts), so there is no token for JavaScript,
+// localStorage, or an XSS payload to steal.
+export async function adminLogin(pin: string): Promise<void> {
   const res = await fetch(`${getAdminEndpoint()}/login`, {
     method: "POST",
     credentials: "include",
@@ -101,11 +105,17 @@ export async function adminLogin(pin: string): Promise<string> {
   });
 
   if (!res.ok) {
-    throw new Error("Invalid PIN");
+    // Surface the server's message (e.g. the brute-force lockout notice)
+    // instead of always reporting "Invalid PIN".
+    let message = "Invalid PIN";
+    try {
+      const data = (await res.json()) as { error?: string };
+      if (data?.error) message = data.error;
+    } catch {
+      // keep the default message
+    }
+    throw new Error(message);
   }
-
-  const data = (await res.json()) as { token: string };
-  return data.token;
 }
 
 export async function adminLogout(): Promise<void> {

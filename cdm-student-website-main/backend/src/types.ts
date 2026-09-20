@@ -29,8 +29,13 @@ export interface AuditLog {
   id?: number;
   action: string;
   detail?: string;
+  /** Origin IP of the actor, recorded for incident forensics. */
+  ip?: string;
+  /** Truncated user agent of the actor, recorded for incident forensics. */
+  user_agent?: string;
   created_at?: string;
 }
+
 
 export interface Student {
   id?: number;

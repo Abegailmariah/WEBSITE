@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { createConcern } from "../database.js";
+import { looksAutomated } from "../validation.js";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_FIELD_LENGTH = 120;
@@ -23,6 +24,16 @@ const router = Router();
 // POST /submit-concern — Submit a student concern
 router.post("/", async (req: Request, res: Response) => {
   try {
+    // Anti-bot checks for this unauthenticated endpoint: a hidden honeypot
+    // field that humans never fill in, plus an implausibly-fast-submission
+    // check. Neither is a substitute for edge protection (Cloudflare/WAF +
+    // Turnstile, see SECURITY.md) — it raises the cost of trivial spam.
+    const automated = looksAutomated((req.body ?? {}) as Record<string, unknown>);
+    if (automated) {
+      res.status(400).json({ error: automated });
+      return;
+    }
+
     const {
       last,
       first,

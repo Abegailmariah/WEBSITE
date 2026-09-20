@@ -1,0 +1,20 @@
+# Repository-root ignores.
+#
+# The application has its own .gitignore inside cdm-student-website-main/.
+# This file covers everything that lives at the repo ROOT — which previously
+# left files such as cookies.txt (an exported cookie jar) unprotected, because
+# the app-level .gitignore does not reach up here.
+.env
+.env.*
+!.env.example
+cookies.txt
+*.log
+logs/
+node_modules/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+backups/
+.vercel
+*.tmp

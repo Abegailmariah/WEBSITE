@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from "express";
-import { getAllAnnouncements, createAnnouncement, addAuditLog } from "../database.js";
+import { getAllAnnouncements, createAnnouncement } from "../database.js";
 import { requireAuth } from "../auth.js";
+import { audit } from "../audit.js";
+import { announcementInputSchema, zodErrorMessages } from "../validation.js";
 
 const router = Router();
 
@@ -31,31 +33,21 @@ router.get("/", async (req: Request, res: Response) => {
 // POST /announcements — Create a new announcement (admin only)
 router.post("/", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { title, date, priority, area, content } = req.body;
-
-    // Validation
-    const errors: string[] = [];
-    if (!title || typeof title !== "string") errors.push("title is required");
-    if (!date || typeof date !== "string") errors.push("date is required");
-    if (!priority || !["Critical", "Normal"].includes(priority))
-      errors.push("priority must be 'Critical' or 'Normal'");
-    if (!area || typeof area !== "string" || !area.trim())
-      errors.push("area is required (campus area whose BLE beacon mirrors this)");
-    if (!content || typeof content !== "string") errors.push("content is required");
-
-    if (errors.length > 0) {
-      res.status(400).json({ errors });
+    // Same schema as PUT /admin/announcements/:id — one definition, so the two
+    // write paths can never drift apart. Enforces type, length caps, the
+    // priority whitelist, and a character whitelist for the BLE beacon area.
+    const parsed = announcementInputSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ errors: zodErrorMessages(parsed.error) });
       return;
     }
 
-    const announcement = await createAnnouncement({
-      title,
-      date,
-      priority,
-      area: String(area).trim(),
-      content,
-    });
-    await addAuditLog("announcement.create", `Created announcement #${announcement.id} — ${title}`);
+    const announcement = await createAnnouncement(parsed.data);
+    audit(
+      req,
+      "announcement.create",
+      `Created announcement #${announcement.id} — ${parsed.data.title}`,
+    );
     res.status(201).json(announcement);
   } catch (err) {
     console.error("[Announcements] Failed to create:", err);

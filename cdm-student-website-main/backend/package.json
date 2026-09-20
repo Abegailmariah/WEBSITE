@@ -6,14 +6,17 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "backup": "node scripts/backup-db.mjs",
+    "purge": "node scripts/purge-concerns.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "express-rate-limit": "^8.6.1",
     "helmet": "^8.3.0",
-    "sql.js": "^1.11.0"
+    "sql.js": "^1.11.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

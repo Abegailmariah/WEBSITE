@@ -15,6 +15,12 @@
 // to bootstrap it. getCsrfHeaderAsync() below does exactly that with one GET.
 
 export const CSRF_COOKIE_NAME = "cdm_csrf_token";
+
+// Production uses the `__Host-` prefix (see backend/src/cookies.ts) so the
+// cookie cannot be overwritten by an attacker-controlled sibling subdomain.
+// Read both names so local dev and production behave the same.
+export const CSRF_COOKIE_NAME_PREFIXED = "__Host-cdm_csrf_token";
+
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
 // The backend echoes the active token in this response header (see
@@ -35,7 +41,8 @@ function readCookie(name: string): string {
 // Returns the CSRF header value to attach to state-changing requests, or ""
 // if no token is known yet.
 export function getCsrfHeader(): Record<string, string> {
-  const token = cachedToken || readCookie(CSRF_COOKIE_NAME);
+  const token =
+    cachedToken || readCookie(CSRF_COOKIE_NAME_PREFIXED) || readCookie(CSRF_COOKIE_NAME);
   if (!token) return {};
   return { [CSRF_HEADER_NAME]: token };
 }
@@ -66,7 +73,7 @@ export async function getCsrfHeaderAsync(endpoint: string): Promise<Record<strin
 
     // Same-origin path (local dev): the readable cookie is available directly.
     if (!cachedToken) {
-      const cookieToken = readCookie(CSRF_COOKIE_NAME);
+      const cookieToken = readCookie(CSRF_COOKIE_NAME_PREFIXED) || readCookie(CSRF_COOKIE_NAME);
       if (cookieToken) cachedToken = cookieToken;
     }
   } catch {
@@ -75,4 +82,3 @@ export async function getCsrfHeaderAsync(endpoint: string): Promise<Record<strin
 
   return getCsrfHeader();
 }
-

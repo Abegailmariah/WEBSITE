@@ -6,7 +6,25 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  // Build output and tooling artifacts must never be linted: .vercel/output
+  // alone contains thousands of pre-bundled files, which made `npm run lint`
+  // take many minutes (effectively hanging) instead of a few seconds.
+  {
+    ignores: [
+      "dist",
+      "dist-ssr",
+      ".output",
+      ".vinxi",
+      ".nitro",
+      ".vercel",
+      ".wrangler",
+      ".tanstack",
+      "node_modules",
+      "**/node_modules/**",
+      "backend/dist",
+      "backups",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

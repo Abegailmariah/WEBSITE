@@ -27,6 +27,8 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /
+    # "/" is a shallow liveness probe. GET /health also verifies the SQLite
+    # datastore answers, so monitor that one externally (see SECURITY.md).
     envVars:
       - key: NODE_VERSION
         value: "22.16.0"
@@ -37,12 +39,27 @@ services:
       - key: COOKIE_SAMESITE
         value: none
       # The dashboard prompts for this during Blueprint creation and stores it
-      # as a secret. Generate one with:
-      #   node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+      # as a secret. It must be LONG and random (>= 32 hex chars) — it is the
+      # only credential protecting every student concern in the system.
+      # Generate one with:
+      #   node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
       - key: ADMIN_PIN
         sync: false
+      # HMAC key that signs CSRF tokens. Render generates and stores it as a
+      # secret so it never exists in Git. Rotating it only invalidates
+      # outstanding tokens (the SPA re-bootstraps one per request).
+      - key: CSRF_SECRET
+        generateValue: true
+      # Admin session policy: 2h sliding idle timeout, 12h absolute maximum.
       - key: SESSION_TTL_MS
-        value: "28800000"
+        value: "7200000"
+      - key: SESSION_ABSOLUTE_MAX_MS
+        value: "43200000"
+      # /admin/login brute-force lockout: 5 failures -> 15 min lock per IP.
+      - key: ADMIN_MAX_FAILED
+        value: "5"
+      - key: ADMIN_LOCKOUT_MS
+        value: "900000"
       # Must include the exact Vercel origin (scheme + host, no trailing slash).
       - key: CORS_ORIGINS
         value: https://cdm-student-website-main.vercel.app

@@ -11,6 +11,13 @@ export type SubmitConcernPayload = {
   type: "Complaint" | "Question" | "Suggestion";
   message: string;
   consent: boolean;
+  // Anti-bot fields (mirrored in backend/src/validation.ts):
+  //  - `website` is a hidden honeypot input that humans never fill in.
+  //  - `formOpenedAt` is the ms timestamp when the form was rendered, so the
+  //    server can reject submissions that arrive implausibly fast.
+  // Both are optional, so the API keeps working if they are omitted.
+  website?: string;
+  formOpenedAt?: number;
 };
 
 export type SubmitConcernResult = {

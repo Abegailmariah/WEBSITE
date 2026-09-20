@@ -1,0 +1,58 @@
+# Security checks on every push / PR.
+#
+# Three gates, matching the manual pre-deploy checks in DEPLOYMENT.md:
+#   1. npm audit  — known CVEs in dependencies (fails on high/critical)
+#   2. tsc        — type errors in frontend and backend
+#   3. build      — the frontend must still produce a deployable bundle
+#
+# ADMIN_PIN is only needed at backend RUNTIME, not for type-checking, so the CI
+# job deliberately does not have access to any real secret.
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  audit-and-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cdm-student-website-main
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Audit frontend (fail on high/critical)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Type-check frontend
+        run: npx tsc --noEmit
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install backend deps
+        working-directory: cdm-student-website-main/backend
+        run: npm ci
+
+      - name: Audit backend (fail on high/critical)
+        working-directory: cdm-student-website-main/backend
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Type-check backend
+        working-directory: cdm-student-website-main/backend
+        run: npx tsc --noEmit
+
+      - name: Build backend
+        working-directory: cdm-student-website-main/backend
+        run: npm run build

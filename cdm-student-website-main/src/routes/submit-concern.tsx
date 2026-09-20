@@ -114,6 +114,12 @@ const defaultValues: FormValues = {
 function SubmitConcernPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Honeypot value — always empty for a human (the field is visually hidden).
+  const [honeypot, setHoneypot] = useState("");
+  // When this form was rendered. The API rejects submissions that arrive less
+  // than ~2 seconds later, which is the signature of a script that posts
+  // straight to the endpoint.
+  const [formOpenedAt] = useState(() => Date.now());
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -128,6 +134,8 @@ function SubmitConcernPage() {
     const payload: SubmitConcernPayload = {
       ...values,
       middle: values.middle?.trim() ? values.middle.trim() : undefined,
+      website: honeypot || undefined,
+      formOpenedAt,
     };
 
     try {
@@ -143,8 +151,7 @@ function SubmitConcernPage() {
       // In demo deployments there is no backend, so the fetch itself fails.
       // Show a friendly explanation instead of a raw network error.
       const isBackendUnreachable =
-        err instanceof TypeError ||
-        /failed to fetch|networkerror|load failed/i.test(rawMessage);
+        err instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(rawMessage);
       const message = isBackendUnreachable
         ? "Demo mode: no backend is connected, so concerns can't be submitted yet. Connect VITE_SUBMIT_CONCERN_ENDPOINT to a live API to enable submissions."
         : rawMessage;
@@ -312,6 +319,23 @@ function SubmitConcernPage() {
                   <FormMessage />
                 </FormItem>
               )}
+            />
+          </div>
+
+          {/* Anti-bot honeypot. Visually hidden from people (sr-only) and
+              skipped by keyboard/screen-reader users (aria-hidden + tabIndex
+              -1), but a naive spam script fills in every input it finds — and
+              the API rejects any submission that includes it. */}
+          <div aria-hidden="true" className="sr-only">
+            <label htmlFor="website">Website (leave this empty)</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
             />
           </div>
 

@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+# The admin console requires a PIN and must never be indexed or linked from
+# search results — scanners use crawlable login pages as a target list.
+Disallow: /admin
 
 Sitemap: https://cdm-student-website-main.vercel.app/sitemap.xml

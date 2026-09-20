@@ -30,16 +30,26 @@ Vercel (Vercel has no persistent process and no writable disk).
    ```powershell
    Invoke-RestMethod https://cdm-ble-api.onrender.com/
    ```
+6. Verify the datastore is reachable as well — `/health` reads the SQLite file,
+   `/` does not:
+   ```powershell
+   Invoke-RestMethod https://cdm-ble-api.onrender.com/health
+   # -> { status: ok, database: ok, announcements: 5, concerns: 0 }
+   ```
 
 ### Environment variables (already in `render.yaml`)
 
 | Key | Value | Why |
 |---|---|---|
-| `NODE_ENV` | `production` | Enables Secure cookies |
+| `NODE_ENV` | `production` | Enables Secure cookies + `__Host-` cookie prefixes |
 | `COOKIE_SAMESITE` | `none` | Cross-site cookies (Vercel → Render) |
-| `ADMIN_PIN` | secret | Server refuses to start without it |
+| `ADMIN_PIN` | secret | Server refuses to start without it. Must be **≥ 32 random hex chars** |
+| `CSRF_SECRET` | generated | Signs CSRF tokens (`generateValue: true`, never in Git) |
 | `CORS_ORIGINS` | `https://cdm-student-website-main.vercel.app` | Blocks other origins |
-| `SESSION_TTL_MS` | `28800000` | 8-hour admin session |
+| `SESSION_TTL_MS` | `7200000` | 2-hour *sliding* admin session |
+| `SESSION_ABSOLUTE_MAX_MS` | `43200000` | 12-hour hard cap on any session |
+| `ADMIN_MAX_FAILED` | `5` | Failed PIN attempts before lockout |
+| `ADMIN_LOCKOUT_MS` | `900000` | 15-minute lockout once tripped |
 
 ### Data persistence
 
@@ -58,6 +68,35 @@ A free Render service sleeps after ~15 minutes of inactivity. The first request
 after that can take 30–60 seconds, which exceeds the 5-second timeout in
 `src/lib/announcements-api.ts` — the site then shows its fallback data. Warm the
 API before a demo by opening the API URL in a browser.
+
+### Backups
+
+The free filesystem is not only ephemeral, it is the **only** copy of the data.
+Snapshot it off-instance (Render Cron Job, Task Scheduler, or manually):
+
+```powershell
+cd cdm-student-website-main\backend
+npm run build
+npm run backup              # -> backend/backups/cdm_portal-<timestamp>.db (keeps 14)
+```
+
+`DB_PATH`, `BACKUP_DIR` and `BACKUP_KEEP` override the locations. To restore:
+stop the API, copy a snapshot over `DB_PATH`, start the API.
+
+### Data retention (RA 10173)
+
+Complaints/questions are personal data and should not be kept forever:
+
+```powershell
+# Preview how many resolved concerns would be removed
+$env:DRY_RUN=1; $env:CONCERN_RETENTION_DAYS=180; npm run purge
+
+# Actually delete resolved concerns older than 180 days
+Remove-Item Env:DRY_RUN; npm run purge
+```
+
+Pending/Read concerns are never touched. Every run is reported on stdout so the
+result can be pasted into the project log.
 
 ---
 
@@ -79,6 +118,12 @@ API before a demo by opening the API URL in a browser.
 
 `vercel.json` deliberately does **not** set `framework` or `outputDirectory`;
 the Nitro `vercel` preset in `vite.config.ts` produces `.vercel/output`.
+
+It **does** add the site's security headers (`X-Frame-Options: DENY`, nosniff,
+Referrer-Policy, Permissions-Policy, COOP) plus a CSP in
+`Content-Security-Policy-Report-Only` mode. Report-Only cannot break the site:
+watch the browser console / Vercel logs, fix any violation caused by our own
+code, then rename the header key to `Content-Security-Policy` to enforce it.
 
 ---
 
@@ -126,3 +171,26 @@ cd cdm-student-website-main\backend; npx tsc --noEmit
 
 Never commit: `.env`, `backend/cdm_portal.db`, `*.log`, `*.txt` build output —
 all are covered by `.gitignore`.
+
+### Security review
+
+`SECURITY.md` at the repo root is the companion checklist. It lists every control
+that is already in the code (CSRF binding, lockout, rate limits, validation,
+audit log, retention tooling) **and** the items only the operator can do:
+long random `ADMIN_PIN`, 2FA on GitHub/Vercel/Render, Dependabot + secret
+scanning, Cloudflare/WAF + Turnstile, branch protection, backups and retention.
+
+### API regression tests
+
+With the API running on :8000:
+
+```powershell
+cd cdm-student-website-main\backend
+$env:TEST_PIN = "<your admin PIN>"
+node test-features.mjs
+```
+
+It exercises the real cookie + CSRF flow and asserts the security behaviours
+(29 checks): CSRF required and session-bound, token never returned in the login
+body, honeypot/timing checks, per-IP login lockout, unauthenticated writes
+rejected, removed `/student/*` routes, audited exports, and input validation.

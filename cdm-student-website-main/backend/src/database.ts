@@ -109,6 +109,8 @@ function initializeSchema(database: SqlJsDatabase): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       action TEXT NOT NULL,
       detail TEXT,
+      ip TEXT,
+      user_agent TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -149,6 +151,18 @@ function runMigrations(database: SqlJsDatabase): void {
     annCols.length > 0 ? annCols[0].values.map((row) => String(row[1])) : [];
   if (!announcementCols.includes("area")) {
     database.run("ALTER TABLE announcements ADD COLUMN area TEXT NOT NULL DEFAULT 'Campus-Wide'");
+  }
+
+  // Audit log: record who acted from where, for incident forensics. Existing
+  // rows keep NULL and are treated as "not recorded".
+  const auditCols = database.exec("PRAGMA table_info(audit_log)");
+  const auditColumns: string[] =
+    auditCols.length > 0 ? auditCols[0].values.map((row) => String(row[1])) : [];
+  if (!auditColumns.includes("ip")) {
+    database.run("ALTER TABLE audit_log ADD COLUMN ip TEXT");
+  }
+  if (!auditColumns.includes("user_agent")) {
+    database.run("ALTER TABLE audit_log ADD COLUMN user_agent TEXT");
   }
 }
 
@@ -552,10 +566,57 @@ export async function getStats(): Promise<{
 
 // ── Audit log ──────────────────────────────────────────────────────
 
-export async function addAuditLog(action: string, detail?: string): Promise<void> {
+export async function addAuditLog(
+  action: string,
+  detail?: string,
+  ip?: string,
+  userAgent?: string,
+): Promise<void> {
   const database = await getDatabase();
-  database.run("INSERT INTO audit_log (action, detail) VALUES (?, ?)", [action, detail ?? null]);
+  database.run("INSERT INTO audit_log (action, detail, ip, user_agent) VALUES (?, ?, ?, ?)", [
+    action,
+    detail ?? null,
+    ip ?? null,
+    // Cap the stored user agent so a hostile client cannot bloat the DB.
+    userAgent ? userAgent.slice(0, 200) : null,
+  ]);
   saveDatabase(database);
+}
+
+// ── Data retention (Data Privacy Act, RA 10173) ────────────────────
+
+/**
+ * Delete concerns that are Resolved and older than `days`. Returns how many
+ * rows were removed.
+ *
+ * Deliberately NOT scheduled by the server: this is invoked from
+ * scripts/purge-concerns.mjs so real student records are never deleted behind
+ * an administrator's back. See SECURITY.md for the retention policy.
+ */
+export async function purgeResolvedConcernsOlderThan(days: number): Promise<number> {
+  const database = await getDatabase();
+  const safeDays = Math.max(1, Math.floor(days));
+  const cutoff = `-${safeDays} days`;
+
+  const countResult = database.exec(
+    `SELECT COUNT(*) AS cnt FROM concerns
+     WHERE status = 'Resolved'
+       AND COALESCE(created_at, datetime('now')) <= datetime('now', ?)`,
+    [cutoff],
+  );
+  const count = countResult.length > 0 ? (countResult[0].values[0][0] as number) : 0;
+
+  if (count > 0) {
+    database.run(
+      `DELETE FROM concerns
+       WHERE status = 'Resolved'
+         AND COALESCE(created_at, datetime('now')) <= datetime('now', ?)`,
+      [cutoff],
+    );
+    saveDatabase(database);
+  }
+
+  return count;
 }
 
 export async function getAuditLog(limit: number = 50): Promise<AuditLog[]> {

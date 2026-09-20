@@ -4,6 +4,23 @@
   "buildCommand": "npm run build",
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        {
+          "key": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cdm-ble-api.onrender.com https://vitals.vercel-insights.com https://va.vercel-scripts.com; worker-src 'self' blob:; upgrade-insecure-requests"
+        }
+      ]
+    },
+    {
       "source": "/favicon.svg",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, immutable" }]
     },
