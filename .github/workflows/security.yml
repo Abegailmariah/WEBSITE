@@ -43,8 +43,18 @@ jobs:
       - name: Type-check frontend
         run: npx tsc --noEmit
 
+      - name: Check endpoint config (report only)
+        # The real gate is `npm run build`, which Vercel runs using the project's
+        # own environment variables. CI deliberately has no VITE_* values — a
+        # deployment is not configured here — so this step only surfaces the gap
+        # without blocking an unrelated push.
+        run: npm run check:env || true
+
       - name: Build frontend
-        run: npm run build
+        # Prove the app still compiles and bundles. The endpoint guard is
+        # bypassed because CI is not a deployment target; Vercel runs the same
+        # `npm run build` un-bypassed and will fail there if endpoints are unset.
+        run: ALLOW_UNCONFIGURED_BUILD=1 npm run build
 
       - name: Install backend deps
         working-directory: cdm-student-website-main/backend
