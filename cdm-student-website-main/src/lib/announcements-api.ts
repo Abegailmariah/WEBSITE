@@ -1,4 +1,9 @@
 import { getCsrfHeaderAsync } from "./csrf";
+import {
+  ANNOUNCEMENTS_ENDPOINT,
+  BackendNotConfiguredError,
+  warnIfUnconfigured,
+} from "./api-config";
 
 export type Announcement = {
   id: number;
@@ -25,24 +30,25 @@ export type AnnouncementsResponse = {
   totalPages: number;
 };
 
-const DEFAULT_ANNOUNCEMENTS_ENDPOINT = "http://localhost:8000/announcements";
+/**
+ * Where the announcements currently on screen came from. Surfaced in the UI so
+ * sample data is never mistaken for a real announcement.
+ *  - "api": live rows from the backend.
+ *  - "sample": backend unreachable — hardcoded demo rows are shown.
+ *  - "unconfigured": this build has no usable backend URL at all.
+ */
+export type AnnouncementSource = "api" | "sample" | "unconfigured";
 
-export function getAnnouncementsEndpoint(): string {
-  const env = import.meta.env;
-  const endpoint = env?.VITE_ANNOUNCEMENTS_ENDPOINT ?? DEFAULT_ANNOUNCEMENTS_ENDPOINT;
+export type AnnouncementsResult = {
+  items: Announcement[];
+  source: AnnouncementSource;
+};
 
-  if (typeof window !== "undefined" && !env?.VITE_ANNOUNCEMENTS_ENDPOINT) {
-    console.warn(
-      "[CdM AID System] VITE_ANNOUNCEMENTS_ENDPOINT is not set. Using default:",
-      DEFAULT_ANNOUNCEMENTS_ENDPOINT,
-      "\nCreate a .env file based on .env.example to configure.",
-    );
-  }
+// Readable, stable name for callers/tests; "" when this build is unconfigured.
+export const announcementsEndpoint = ANNOUNCEMENTS_ENDPOINT;
 
-  return endpoint;
-}
-
-// Fallback mock data used when the backend is unreachable
+// Hardcoded demo rows, shown ONLY when the backend cannot be reached, and then
+// only behind a visible "sample data" banner (see BackendStatusBanner).
 const fallbackAnnouncements: Announcement[] = [
   {
     id: 1,
@@ -89,10 +95,25 @@ const fallbackAnnouncements: Announcement[] = [
   },
 ];
 
+/**
+ * Request budget for the public list. A free Render instance can take 30-60s to
+ * cold-start; 15s covers a warm-but-slow API without hanging the page, and the
+ * 60s polling in the routes recovers once the instance is awake.
+ */
+const FETCH_TIMEOUT_MS = 15_000;
+
 export async function fetchAnnouncements(
   sort: "newest" | "oldest" = "newest",
-): Promise<Announcement[]> {
-  const endpoint = getAnnouncementsEndpoint();
+): Promise<AnnouncementsResult> {
+  const endpoint = ANNOUNCEMENTS_ENDPOINT;
+
+  // No usable URL in this build: say so instead of firing a doomed fetch at a
+  // localhost address that would fail as an opaque network error.
+  if (!endpoint) {
+    warnIfUnconfigured("announcements");
+    return { items: fallbackAnnouncements, source: "unconfigured" };
+  }
+
   const params = new URLSearchParams({ sort });
   const url = `${endpoint}?${params.toString()}`;
 
@@ -100,23 +121,23 @@ export async function fetchAnnouncements(
     const res = await fetch(url, {
       method: "GET",
       headers: { accept: "application/json" },
-      // Timeout after 5s so the UI doesn't hang
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!res.ok) {
-      console.warn(`Announcements API returned HTTP ${res.status}. Falling back to mock data.`);
-      return fallbackAnnouncements;
+      console.warn(`Announcements API returned HTTP ${res.status}. Showing sample data.`);
+      return { items: fallbackAnnouncements, source: "sample" };
     }
 
     const data = await res.json();
     // Backward-compatible: array or { data, total, page, totalPages }
-    if (Array.isArray(data)) return data as Announcement[];
-    if (data && Array.isArray(data.data)) return data.data as Announcement[];
-    return fallbackAnnouncements;
+    if (Array.isArray(data)) return { items: data as Announcement[], source: "api" };
+    if (data && Array.isArray(data.data))
+      return { items: data.data as Announcement[], source: "api" };
+    return { items: fallbackAnnouncements, source: "sample" };
   } catch (err) {
-    console.warn("Failed to fetch announcements from backend. Falling back to mock data.", err);
-    return fallbackAnnouncements;
+    console.warn("Failed to fetch announcements from backend. Showing sample data.", err);
+    return { items: fallbackAnnouncements, source: "sample" };
   }
 }
 
@@ -126,7 +147,8 @@ export async function fetchAnnouncementsPage(
   limit: number = 10,
   sort: "newest" | "oldest" = "newest",
 ): Promise<AnnouncementsResponse> {
-  const endpoint = getAnnouncementsEndpoint();
+  if (!ANNOUNCEMENTS_ENDPOINT) throw new BackendNotConfiguredError("the announcements list");
+  const endpoint = ANNOUNCEMENTS_ENDPOINT;
   const params = new URLSearchParams({ page: String(page), limit: String(limit), sort });
 
   const res = await fetch(`${endpoint}?${params.toString()}`, {
@@ -143,7 +165,8 @@ export async function fetchAnnouncementsPage(
 }
 
 export async function createAnnouncement(announcement: NewAnnouncement): Promise<Announcement> {
-  const endpoint = getAnnouncementsEndpoint();
+  if (!ANNOUNCEMENTS_ENDPOINT) throw new BackendNotConfiguredError("creating announcements");
+  const endpoint = ANNOUNCEMENTS_ENDPOINT;
 
   const res = await fetch(endpoint, {
     method: "POST",

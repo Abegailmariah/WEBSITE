@@ -116,6 +116,51 @@ result can be pasted into the project log.
    (the repo has an extra `WEBSITE-main/` level on disk — if the repo root is
    the project folder, leave this empty).
 
+### The build guard (added after a real incident)
+
+A Vercel project with **no** `VITE_*` variables used to build successfully and
+ship a bundle pointing at `http://localhost:8000` — i.e. every visitor's browser
+called its own machine. The site looked healthy (HTTP 200) but showed hardcoded
+sample announcements and rejected every concern submission, because the code
+fell back silently.
+
+`npm run build` now runs `scripts/check-env.mjs` first, which **fails the build**
+when a production build would bake a missing, non-https, or localhost endpoint.
+Since Vercel's build command is `npm run build`, a misconfigured project can no
+longer deploy — it fails red with the exact variable names to fix.
+
+* Offline/demo build on purpose: `ALLOW_UNCONFIGURED_BUILD=1 npm run build`.
+* Check without building: `npm run check:env`.
+* Runtime safety net: `src/lib/api-config.ts` resolves an unusable endpoint to
+  `""` instead of localhost, so the app reports "no backend connected" rather
+  than firing a doomed request. Sample announcements are now labelled with an
+  on-page banner instead of passing themselves off as live.
+
+### Verify the deployed bundle contains the real URL
+
+```powershell
+cd cdm-student-website-main
+$env:VITE_ANNOUNCEMENTS_ENDPOINT='https://cdm-ble-api.onrender.com/announcements'
+$env:VITE_SUBMIT_CONCERN_ENDPOINT='https://cdm-ble-api.onrender.com/submit-concern'
+$env:VITE_ADMIN_ENDPOINT='https://cdm-ble-api.onrender.com/admin'
+npm run build
+# Import the built chunk and print what it actually resolved to:
+node --input-type=module -e "const m=await import('file:///'+(Get-ChildItem '.vercel/output/static/assets/api-config-*.js')[0].FullName.Replace('\','/')); console.log(m.n, m.i, m.t)"
+```
+
+Expected: three `https://cdm-ble-api.onrender.com/...` URLs, and no fetchable
+`localhost` endpoint. In the browser, DevTools → Network should show requests to
+`cdm-ble-api.onrender.com`, never to `localhost:8000`.
+
+Before trusting the site, confirm the API itself is live:
+
+```powershell
+curl https://cdm-ble-api.onrender.com/health   # expect 200 {"status":"ok",...}
+```
+
+A 404 here means the Render Blueprint in `render.yaml` was never applied — the
+frontend cannot work until that service exists.
+
 `vercel.json` deliberately does **not** set `framework` or `outputDirectory`;
 the Nitro `vercel` preset in `vite.config.ts` produces `.vercel/output`.
 

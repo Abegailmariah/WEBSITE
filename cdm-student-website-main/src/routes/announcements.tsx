@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState, useRef, useEffect, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, useMemo, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAnnouncements, type Announcement } from "@/lib/announcements-api";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { BackendStatusBanner } from "@/components/BackendStatusBanner";
 
 type AnnouncementsSearch = {
   open?: number;
@@ -60,7 +61,7 @@ function AnnouncementsPage() {
   }, [search]);
 
   const {
-    data: announcements = [],
+    data: announcementsResult,
     isLoading,
     isError,
     error,
@@ -69,10 +70,16 @@ function AnnouncementsPage() {
     queryKey: ["announcements", sort],
     queryFn: () => fetchAnnouncements(sort),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
+    retry: 1,
     refetchInterval: 60_000, // Live polling: refresh every 60s
     refetchIntervalInBackground: false,
   });
+
+  // Memoised so the `announcements` reference is stable between renders, which
+  // keeps the deep-link useEffect below from re-running on unrelated renders.
+  const announcements = useMemo(() => announcementsResult?.items ?? [], [announcementsResult]);
+  // "api" | "sample" | "unconfigured" — drives the sample-data banner.
+  const announcementSource = announcementsResult?.source ?? "api";
 
   // Deep-link support: open the modal when ?open=<id> is present (e.g. from
   // the homepage "Latest Announcements" cards).
@@ -223,6 +230,8 @@ function AnnouncementsPage() {
         title="Announcements"
         subtitle="Official area-based updates from Colegio de Montalban — mirrored from BLE beacons on campus."
       />
+
+      <BackendStatusBanner source={announcementSource} />
 
       {/* Search + priority + area filter */}
       <div className="mb-6 flex flex-col gap-3">

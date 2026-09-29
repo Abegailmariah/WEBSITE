@@ -148,13 +148,17 @@ function SubmitConcernPage() {
       setTimeout(() => setSubmitted(false), 15000);
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : "Submission failed";
+      // No endpoint baked into this build: a config problem, not a network one.
+      const notConfigured = err instanceof Error && err.name === "BackendNotConfiguredError";
       // In demo deployments there is no backend, so the fetch itself fails.
       // Show a friendly explanation instead of a raw network error.
       const isBackendUnreachable =
         err instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(rawMessage);
-      const message = isBackendUnreachable
-        ? "Demo mode: no backend is connected, so concerns can't be submitted yet. Connect VITE_SUBMIT_CONCERN_ENDPOINT to a live API to enable submissions."
-        : rawMessage;
+      const message = notConfigured
+        ? "This site was deployed without a backend address. Set VITE_SUBMIT_CONCERN_ENDPOINT in Vercel's environment variables and redeploy without the build cache."
+        : isBackendUnreachable
+          ? "The server could not be reached. It may be waking up — please try again in a minute."
+          : rawMessage;
       setErrorMessage(message);
       toast.error("Submission failed", {
         description: message,

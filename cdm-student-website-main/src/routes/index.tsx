@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { fetchAnnouncements } from "@/lib/announcements-api";
 import { EmptyState } from "@/components/EmptyState";
+import { BackendStatusBanner } from "@/components/BackendStatusBanner";
 
 interface Feature {
   t: string;
@@ -90,17 +91,21 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const {
-    data: announcements = [],
+    data: announcementsResult,
     isLoading,
     isError,
   } = useQuery({
     queryKey: ["announcements"],
     queryFn: () => fetchAnnouncements(),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
+    retry: 1,
     refetchInterval: 60_000, // Live polling: refresh every 60s
     refetchIntervalInBackground: false,
   });
+
+  const announcements = announcementsResult?.items ?? [];
+  // "api" | "sample" | "unconfigured" — drives the sample-data banner.
+  const announcementSource = announcementsResult?.source ?? "api";
 
   const latest = announcements.slice(0, 3);
 
@@ -172,7 +177,9 @@ function Index() {
             {/* Stats / illustration panel */}
             <div className="grid grid-cols-1 gap-4">
               <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm">
-                <div className="text-3xl font-extrabold text-white">{announcements.length}</div>
+                <div className="text-3xl font-extrabold text-white">
+                  {announcementSource === "api" ? announcements.length : "—"}
+                </div>
                 <p className="text-sm text-secondary/80 mt-1">Active Announcements</p>
               </div>
               <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-sm">
@@ -202,6 +209,8 @@ function Index() {
             View all →
           </Link>
         </div>
+
+        <BackendStatusBanner source={announcementSource} />
 
         {isLoading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

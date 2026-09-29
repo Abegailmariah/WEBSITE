@@ -1,4 +1,5 @@
 import { getCsrfHeaderAsync } from "./csrf";
+import { SUBMIT_CONCERN_ENDPOINT, BackendNotConfiguredError } from "./api-config";
 
 export type SubmitConcernPayload = {
   last: string;
@@ -26,27 +27,15 @@ export type SubmitConcernResult = {
   status: string;
 };
 
-const DEFAULT_ENDPOINT = "http://localhost:8000/submit-concern";
-
-export function getSubmitConcernEndpoint() {
-  // Vite convention: import.meta.env.VITE_*
-  // Keep it optional so the app can still run without configuration.
-  const env = import.meta.env;
-  const endpoint = env?.VITE_SUBMIT_CONCERN_ENDPOINT ?? DEFAULT_ENDPOINT;
-
-  if (typeof window !== "undefined" && !env?.VITE_SUBMIT_CONCERN_ENDPOINT) {
-    console.warn(
-      "[CdM AID System] VITE_SUBMIT_CONCERN_ENDPOINT is not set. Using default:",
-      DEFAULT_ENDPOINT,
-      "\nCreate a .env file based on .env.example to configure.",
-    );
-  }
-
-  return endpoint;
-}
+// "" when this build has no usable backend URL (see api-config.ts).
+export const submitConcernEndpoint = SUBMIT_CONCERN_ENDPOINT;
 
 export async function submitConcern(payload: SubmitConcernPayload): Promise<SubmitConcernResult> {
-  const endpoint = getSubmitConcernEndpoint();
+  const endpoint = SUBMIT_CONCERN_ENDPOINT;
+
+  // Fail with an actionable message instead of a bare `TypeError: Failed to
+  // fetch` against a localhost URL the visitor's browser cannot resolve.
+  if (!endpoint) throw new BackendNotConfiguredError("submitting a concern");
 
   const res = await fetch(endpoint, {
     method: "POST",

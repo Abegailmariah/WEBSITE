@@ -1,4 +1,5 @@
 import { getCsrfHeaderAsync } from "./csrf";
+import { ADMIN_ENDPOINT, BackendNotConfiguredError } from "./api-config";
 
 export type AdminStats = {
   announcements: number;
@@ -47,15 +48,14 @@ export type AdminConcernsResponse = {
   totalPages: number;
 };
 
-const DEFAULT_ADMIN_ENDPOINT = "http://localhost:8000/admin";
-
+// Resolved in api-config.ts. "" when this build has no usable backend URL.
 export function getAdminEndpoint(): string {
-  const env = import.meta.env;
-  return (env?.VITE_ADMIN_ENDPOINT as string) ?? DEFAULT_ADMIN_ENDPOINT;
+  return ADMIN_ENDPOINT;
 }
 
 // All admin requests use credentials: "include" so the httpOnly cookie is sent.
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (!ADMIN_ENDPOINT) throw new BackendNotConfiguredError("the admin console");
   const method = (options.method ?? "GET").toUpperCase();
   const isStateChanging = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
   // Attach the CSRF token for state-changing requests (double-submit).
@@ -93,6 +93,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // (see backend/src/routes/admin.ts), so there is no token for JavaScript,
 // localStorage, or an XSS payload to steal.
 export async function adminLogin(pin: string): Promise<void> {
+  if (!ADMIN_ENDPOINT) throw new BackendNotConfiguredError("the admin console");
   const res = await fetch(`${getAdminEndpoint()}/login`, {
     method: "POST",
     credentials: "include",
@@ -152,6 +153,7 @@ export function fetchAdminConcerns(
 
 // Download all concerns as CSV via a hidden anchor.
 export function downloadConcernsCsv(search: string = ""): void {
+  if (!ADMIN_ENDPOINT) return;
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   const url = `${getAdminEndpoint()}/concerns/export?${params.toString()}`;
