@@ -24,7 +24,11 @@ services:
     # virginia, frankfurt.
     region: singapore
     rootDir: cdm-student-website-main/backend
-    buildCommand: npm ci && npm run build
+    # NODE_ENV=production (set below) also applies at BUILD time, and npm treats
+    # that as `--omit=dev`: a plain `npm ci` then skips devDependencies, so `tsc`
+    # is missing and `npm run build` fails with "'tsc' is not recognized".
+    # --include=dev overrides that so the build works on Render, in CI, and locally.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /
     # "/" is a shallow liveness probe. GET /health also verifies the SQLite
