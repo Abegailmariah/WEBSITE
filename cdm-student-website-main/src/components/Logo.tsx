@@ -11,11 +11,11 @@ type LogoProps = {
  * needs no image asset and scales crisply at any size.
  *
  * Colours come from the design system via Tailwind's fill/stroke utilities
- * (`fill-secondary` gold disc, `fill-primary`/`stroke-primary` navy green
+ * (`fill-secondary` gold disc, `fill-primary`/`stroke-primary` forest green
  * artwork), which resolve to the --color-* theme variables in styles.css — so
  * the mark follows any palette change automatically.
  *
- * Layout is centred on a 48x48 viewBox: gold disc, inset navy ring,
+ * Layout is centred on a 48x48 viewBox: gold disc, inset green ring,
  * graduation cap, then the "CdM" monogram.
  */
 export function Logo({ className, title }: LogoProps) {
@@ -33,7 +33,7 @@ export function Logo({ className, title }: LogoProps) {
       {/* Gold disc */}
       <circle cx="24" cy="24" r="23.5" className="fill-secondary" />
 
-      {/* Inset navy green ring */}
+      {/* Inset forest green ring */}
       <circle
         cx="24"
         cy="24"

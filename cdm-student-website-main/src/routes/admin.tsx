@@ -260,7 +260,7 @@ function OverviewTab() {
         <div className="flex flex-wrap gap-6">
           {[
             { label: "Pending", value: stats.pending, color: "#f59e0b" },
-            { label: "Read", value: stats.read, color: "#3b82f6" },
+            { label: "Read", value: stats.read, color: "#0A4D2E" },
             { label: "Resolved", value: stats.resolved, color: "#10b981" },
           ].map((s) => {
             const total = stats.concerns || 1;
@@ -960,7 +960,7 @@ function ConcernsTab() {
                       (c.status === "Resolved"
                         ? "bg-emerald-100 text-emerald-700"
                         : c.status === "Read"
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-green-100 text-green-700"
                           : "bg-amber-100 text-amber-700")
                     }
                   >

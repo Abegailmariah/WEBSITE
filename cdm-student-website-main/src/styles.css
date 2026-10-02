@@ -56,44 +56,46 @@
 
 :root {
   --radius: 0.75rem;
-  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui,
-    -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --background: oklch(0.975 0.008 90);
-  --foreground: oklch(0.2 0.02 20);
+  --font-body:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-heading:
+    "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --background: oklch(0.977 0.006 145);
+  --foreground: oklch(0.21 0.03 150);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 20);
+  --card-foreground: oklch(0.21 0.03 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 20);
-  /* Navy Green */
-  --primary: oklch(0.29 0.06 185);
-  --primary-foreground: oklch(0.97 0.02 170);
-  /* Yellow highlight */
-  --secondary: oklch(0.87 0.17 95);
-  --secondary-foreground: oklch(0.24 0.05 185);
-  --muted: oklch(0.95 0.008 90);
-  --muted-foreground: oklch(0.44 0.02 25);
-  --accent: oklch(0.87 0.17 95);
-  --accent-foreground: oklch(0.24 0.05 185);
+  --popover-foreground: oklch(0.21 0.03 150);
+  /* Evergreen — between forest and emerald */
+  --primary: oklch(0.372 0.083 157);
+  --primary-foreground: oklch(0.97 0.02 145);
+  /* Golden Yellow */
+  --secondary: oklch(0.84 0.15 84);
+  --secondary-foreground: oklch(0.24 0.06 150);
+  --muted: oklch(0.955 0.008 145);
+  --muted-foreground: oklch(0.46 0.02 150);
+  --accent: oklch(0.84 0.15 84);
+  --accent-foreground: oklch(0.24 0.06 150);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.9 0.03 185);
-  --input: oklch(0.9 0.03 185);
-  --ring: oklch(0.72 0.14 95);
-  --chart-1: oklch(0.45 0.07 185);
-  --chart-2: oklch(0.8 0.15 95);
-  --chart-3: oklch(0.35 0.06 190);
-  --chart-4: oklch(0.6 0.1 180);
-  --chart-5: oklch(0.72 0.14 95);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.29 0.06 185);
-  --sidebar-primary-foreground: oklch(0.97 0.02 170);
-  --sidebar-accent: oklch(0.9 0.1 95);
-  --sidebar-accent-foreground: oklch(0.3 0.055 185);
-  --sidebar-border: oklch(0.9 0.03 185);
-  --sidebar-ring: oklch(0.72 0.14 95);
+  --border: oklch(0.9 0.03 150);
+  --input: oklch(0.9 0.03 150);
+  --ring: oklch(0.75 0.15 84);
+  --chart-1: oklch(0.4 0.095 157);
+  --chart-2: oklch(0.8 0.15 84);
+  --chart-3: oklch(0.33 0.07 157);
+  --chart-4: oklch(0.62 0.11 157);
+  --chart-5: oklch(0.75 0.14 84);
+  --sidebar: oklch(0.98 0.005 145);
+  --sidebar-foreground: oklch(0.21 0.03 150);
+  --sidebar-primary: oklch(0.372 0.083 157);
+  --sidebar-primary-foreground: oklch(0.97 0.02 145);
+  --sidebar-accent: oklch(0.9 0.1 88);
+  --sidebar-accent-foreground: oklch(0.3 0.06 150);
+  --sidebar-border: oklch(0.9 0.03 150);
+  --sidebar-ring: oklch(0.75 0.15 84);
 }
 
 @layer base {
@@ -110,11 +112,9 @@
 
   body {
     background-color: var(--color-background);
-    background-image: radial-gradient(
-        ellipse 80% 50% at 50% -20%,
-        oklch(0.87 0.17 95 / 0.14),
-        transparent
-      );
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.84 0.15 84 / 0.16), transparent),
+      radial-gradient(ellipse 70% 45% at 110% 110%, oklch(0.372 0.083 157 / 0.08), transparent);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-body);
@@ -131,7 +131,7 @@
   }
 
   ::selection {
-    background-color: oklch(0.87 0.17 95 / 0.4);
+    background-color: oklch(0.84 0.15 84 / 0.4);
     color: var(--foreground);
   }
 
@@ -165,7 +165,7 @@
   .btn-primary:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px -6px oklch(0.29 0.06 185 / 0.5);
+    box-shadow: 0 8px 20px -6px oklch(0.372 0.083 157 / 0.5);
   }
   .btn-secondary {
     background-color: var(--secondary);
@@ -174,7 +174,7 @@
   .btn-secondary:hover {
     filter: brightness(0.96);
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px -6px oklch(0.87 0.17 95 / 0.6);
+    box-shadow: 0 8px 20px -6px oklch(0.84 0.15 84 / 0.6);
   }
   .btn-outline {
     background-color: transparent;
@@ -187,11 +187,14 @@
 
   /* Card hover lift used across announcement/feature cards */
   .card-hover {
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
   }
   .card-hover:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 28px -12px oklch(0.2 0.02 20 / 0.25);
-    border-color: oklch(0.8 0.06 185);
+    box-shadow: 0 12px 28px -12px oklch(0.21 0.03 150 / 0.25);
+    border-color: oklch(0.78 0.09 150);
   }
 }

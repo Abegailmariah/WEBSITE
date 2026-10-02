@@ -36,7 +36,11 @@ function clearJar() {
 // to the session cookie), so it must be re-fetched after login/logout.
 async function bootstrapCsrf(extraHeaders = {}) {
   const res = await fetch(`${BASE}/`, {
-    headers: { accept: "application/json", ...(cookieHeader() && { cookie: cookieHeader() }), ...extraHeaders },
+    headers: {
+      accept: "application/json",
+      ...(cookieHeader() && { cookie: cookieHeader() }),
+      ...extraHeaders,
+    },
   });
   rememberSetCookie(res);
   return res.headers.get("x-csrf-token") ?? "";
@@ -112,7 +116,11 @@ const malformed = await fetch(`${BASE}/submit-concern`, {
   headers: { "content-type": "application/json", "x-csrf-token": await bootstrapCsrf() },
   body: "{not valid json",
 });
-check("Malformed JSON body returns 400 (not 500)", malformed.status === 400, `status=${malformed.status}`);
+check(
+  "Malformed JSON body returns 400 (not 500)",
+  malformed.status === 400,
+  `status=${malformed.status}`,
+);
 
 // ── 2. Public concern form ─────────────────────────────────────────
 const created = await req("/submit-concern", {
@@ -130,25 +138,41 @@ const noConsent = await req("/submit-concern", {
   method: "POST",
   body: JSON.stringify(concern({ studentNumber: "24-00124", consent: undefined })),
 });
-check("POST rejected without RA 10173 consent", noConsent.status === 400, `status=${noConsent.status}`);
+check(
+  "POST rejected without RA 10173 consent",
+  noConsent.status === 400,
+  `status=${noConsent.status}`,
+);
 
 const badNumber = await req("/submit-concern", {
   method: "POST",
   body: JSON.stringify(concern({ studentNumber: "----" })),
 });
-check("POST rejected with malformed student number", badNumber.status === 400, `status=${badNumber.status}`);
+check(
+  "POST rejected with malformed student number",
+  badNumber.status === 400,
+  `status=${badNumber.status}`,
+);
 
 const honeypot = await req("/submit-concern", {
   method: "POST",
   body: JSON.stringify(concern({ website: "http://spam.example" })),
 });
-check("POST rejected when the honeypot is filled", honeypot.status === 400, `status=${honeypot.status}`);
+check(
+  "POST rejected when the honeypot is filled",
+  honeypot.status === 400,
+  `status=${honeypot.status}`,
+);
 
 const tooFast = await req("/submit-concern", {
   method: "POST",
   body: JSON.stringify(concern({ formOpenedAt: Date.now() })),
 });
-check("POST rejected when submitted implausibly fast", tooFast.status === 400, `status=${tooFast.status}`);
+check(
+  "POST rejected when submitted implausibly fast",
+  tooFast.status === 400,
+  `status=${tooFast.status}`,
+);
 
 const noCsrf = await req("/submit-concern", {
   method: "POST",
@@ -240,7 +264,11 @@ check(
 const audit = await req("/admin/audit?limit=50");
 const actions = Array.isArray(audit.body) ? audit.body.map((e) => e.action) : [];
 const actionList = [...new Set(actions)].join(",");
-check("CSV export is recorded in the audit log", actions.includes("concern.export"), `actions=${actionList}`);
+check(
+  "CSV export is recorded in the audit log",
+  actions.includes("concern.export"),
+  `actions=${actionList}`,
+);
 check(
   "Failed logins are recorded in the audit log",
   actions.includes("admin.login_failed"),
@@ -251,7 +279,6 @@ check(
   Array.isArray(audit.body) && audit.body.some((e) => Boolean(e.ip)),
   `first=${JSON.stringify(audit.body?.[0])}`,
 );
-
 
 // ── 6. Announcement validation (one shared schema) ─────────────────
 // NOTE: create lives at POST /announcements (admin-authenticated); only the
@@ -305,7 +332,11 @@ check(
 );
 if (goodAnn.body?.id) {
   const removed = await req(`/admin/announcements/${goodAnn.body.id}`, { method: "DELETE" });
-  check("Created announcement can be deleted again", removed.status === 200, `status=${removed.status}`);
+  check(
+    "Created announcement can be deleted again",
+    removed.status === 200,
+    `status=${removed.status}`,
+  );
 }
 
 // ── 7. Removed attack surface / auth required ──────────────────────
@@ -339,7 +370,11 @@ const studentLogin = await req("/student/login", {
   method: "POST",
   body: JSON.stringify({ studentNumber: "24-00123", password: "student123" }),
 });
-check("Removed /student/* endpoints are gone (404)", studentLogin.status === 404, `status=${studentLogin.status}`);
+check(
+  "Removed /student/* endpoints are gone (404)",
+  studentLogin.status === 404,
+  `status=${studentLogin.status}`,
+);
 
 // ── 8. Brute-force lockout (per IP) ────────────────────────────────
 // A spoofed X-Forwarded-For exercises the lockout against an IP that is not this
@@ -406,10 +441,11 @@ if (Array.isArray(leftovers.body)) {
   );
   for (const a of junk) {
     const res = await req(`/admin/announcements/${a.id}`, { method: "DELETE" });
-    console.log(`INFO: removed leftover test announcement #${a.id} "${a.title}" (status=${res.status})`);
+    console.log(
+      `INFO: removed leftover test announcement #${a.id} "${a.title}" (status=${res.status})`,
+    );
   }
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;
-
