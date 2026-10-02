@@ -27,7 +27,6 @@ app.set("trust proxy", 1);
 // Helmet already removes it; being explicit documents the intent.
 app.disable("x-powered-by");
 
-
 // ── Security Headers (Helmet) ──────────────────────────────────────
 app.use(helmet());
 
@@ -166,7 +165,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   // body-parser rejections (malformed JSON, payload over the 16kb limit) are
   // CLIENT errors. Reporting them as 500 both misleads the caller and floods the
   // logs with stack traces from hostile or broken input.
-  const status = (err as Error & { status?: number; statusCode?: number }).status ??
+  const status =
+    (err as Error & { status?: number; statusCode?: number }).status ??
     (err as Error & { statusCode?: number }).statusCode;
   if (typeof status === "number" && status >= 400 && status < 500) {
     res.status(status).json({ error: status === 413 ? "Payload too large" : "Bad request" });

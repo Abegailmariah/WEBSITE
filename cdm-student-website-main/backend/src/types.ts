@@ -36,7 +36,6 @@ export interface AuditLog {
   created_at?: string;
 }
 
-
 export interface Student {
   id?: number;
   student_number: string;

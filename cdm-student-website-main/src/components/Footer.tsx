@@ -39,13 +39,15 @@ export function Footer() {
             <Logo className="w-9 h-9 shrink-0 rounded-full" />
             <div className="leading-tight">
               <div className="font-semibold text-white text-sm">Colegio de Montalban</div>
-              <div className="text-xs text-secondary/90">Area-Based Info Dissemination (BLE Beacons)</div>
+              <div className="text-xs text-secondary/90">
+                Area-Based Info Dissemination (BLE Beacons)
+              </div>
             </div>
           </div>
           <p className="mt-3 text-xs text-secondary/80 max-w-md leading-relaxed">
-            Web component of the capstone “Area-Based Academic Information Dissemination System using
-            Bluetooth Low Energy (BLE) Beacon Technology” — official announcements delivered per area
-            on campus, plus a direct channel for student concerns.
+            Web component of the capstone “Area-Based Academic Information Dissemination System
+            using Bluetooth Low Energy (BLE) Beacon Technology” — official announcements delivered
+            per area on campus, plus a direct channel for student concerns.
           </p>
         </div>
 

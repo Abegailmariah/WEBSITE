@@ -156,14 +156,10 @@ export function requireCsrf(req: Request, res: Response, next: NextFunction): vo
   }
 
   const headerToken = req.headers[CSRF_HEADER_NAME];
-  if (
-    typeof headerToken !== "string" ||
-    !isValidCsrfToken(headerToken, sessionTokenFor(req))
-  ) {
+  if (typeof headerToken !== "string" || !isValidCsrfToken(headerToken, sessionTokenFor(req))) {
     res.status(403).json({ error: "Invalid or missing CSRF token" });
     return;
   }
 
   next();
 }
-

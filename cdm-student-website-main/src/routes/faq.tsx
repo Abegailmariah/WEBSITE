@@ -11,7 +11,10 @@ export const Route = createFileRoute("/faq")({
         content:
           "Frequently asked questions about the Area-Based Academic Information Dissemination System using Bluetooth Low Energy (BLE) Beacon Technology at Colegio de Montalban.",
       },
-      { property: "og:title", content: "FAQ — Area-Based Academic Information Dissemination System" },
+      {
+        property: "og:title",
+        content: "FAQ — Area-Based Academic Information Dissemination System",
+      },
       {
         property: "og:description",
         content:
@@ -168,4 +171,3 @@ function FaqPage() {
     </div>
   );
 }
-

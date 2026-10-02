@@ -50,6 +50,4 @@ if (dryRun) {
 }
 
 const removed = await purgeResolvedConcernsOlderThan(retentionDays);
-console.log(
-  `[Purge] Deleted ${removed} resolved concern(s) older than ${retentionDays} days.`,
-);
+console.log(`[Purge] Deleted ${removed} resolved concern(s) older than ${retentionDays} days.`);

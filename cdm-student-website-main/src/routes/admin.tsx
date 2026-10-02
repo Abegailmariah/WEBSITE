@@ -211,7 +211,6 @@ function OverviewTab() {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, []);
 
   if (loading) {
@@ -307,7 +306,6 @@ function AnnouncementsTab() {
 
   useEffect(() => {
     void load(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, []);
 
   const handleDelete = async (id: number) => {
@@ -1095,7 +1093,6 @@ function AuditTab() {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, []);
 
   return (

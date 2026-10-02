@@ -31,8 +31,7 @@ const router = Router();
 // Cross-site cookies (Vercel frontend + separate API host) require
 // SameSite=None + Secure. Same-site/local dev uses Lax.
 // COOKIE_SAMESITE=none + NODE_ENV=production on the backend host.
-const COOKIE_SAMESITE: "none" | "lax" =
-  process.env.COOKIE_SAMESITE === "none" ? "none" : "lax";
+const COOKIE_SAMESITE: "none" | "lax" = process.env.COOKIE_SAMESITE === "none" ? "none" : "lax";
 const COOKIE_SECURE = process.env.NODE_ENV === "production" || COOKIE_SAMESITE === "none";
 
 const COOKIE_OPTIONS = {
@@ -77,7 +76,6 @@ function recordFailedLogin(ip: string): void {
   }
   failedAttempts.set(ip, entry);
 }
-
 
 // POST /admin/login — verify PIN, create a session token, and set an httpOnly cookie
 router.post("/login", (req: Request, res: Response) => {
