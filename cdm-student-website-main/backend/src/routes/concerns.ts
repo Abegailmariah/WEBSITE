@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { createConcern } from "../database.js";
+import { findProfanity } from "../profanity.js";
 import { looksAutomated } from "../validation.js";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -82,6 +83,13 @@ router.post("/", async (req: Request, res: Response) => {
         errors.push(`${field} must be at most ${MAX_FIELD_LENGTH} characters`);
       }
     }
+
+    // Profanity filter (server-side, cannot be bypassed with curl/DevTools).
+    // Keep the message professional: reject the submission with a 400 and tell
+    // the student exactly what to fix. Runs on the sanitized message so HTML
+    // tags/entities cannot be used to smuggle words past the check.
+    const badWords = findProfanity(sanitized.message);
+    if (badWords.length > 0) errors.push("message contains inappropriate language");
 
     // Data Privacy Act (RA 10173) consent
     if (consent !== true) {

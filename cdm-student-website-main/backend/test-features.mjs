@@ -174,6 +174,82 @@ check(
   `status=${tooFast.status}`,
 );
 
+const profane = await req("/submit-concern", {
+  method: "POST",
+  body: JSON.stringify(
+    concern({ studentNumber: "24-00126", message: "You are a bitch" }),
+  ),
+});
+check(
+  "POST rejected when the message contains profanity",
+  profane.status === 400 &&
+    JSON.stringify(profane.body).includes("inappropriate language"),
+  `status=${profane.status} body=${JSON.stringify(profane.body)}`,
+);
+
+const profaneEvasion = await req("/submit-concern", {
+  method: "POST",
+  body: JSON.stringify(
+    concern({ studentNumber: "24-00127", message: "sh1t happens" }),
+  ),
+});
+check(
+  "POST rejected for leet-speak profanity too",
+  profaneEvasion.status === 400 &&
+    JSON.stringify(profaneEvasion.body).includes("inappropriate language"),
+  `status=${profaneEvasion.status} body=${JSON.stringify(profaneEvasion.body)}`,
+);
+
+// "shell" / "well" / "class" contain listed substrings ("hell", "ass") — the
+// word-boundary rule must let them through (no Scunthorpe false positives).
+const innocent = await req("/submit-concern", {
+  method: "POST",
+  body: JSON.stringify(
+    concern({
+      studentNumber: "24-00128",
+      message: "Hello shell class, well noted",
+    }),
+  ),
+});
+check(
+  "POST accepts innocent words that contain listed substrings",
+  innocent.status === 201,
+  `status=${innocent.status} body=${JSON.stringify(innocent.body)}`,
+);
+if (typeof innocent.body?.id === "number") {
+  // Deferred: deletion needs an admin session (login happens below), so stash
+  // the id and clean it up in the final cleanup section instead of here.
+  globalThis.__filterProbeId = innocent.body.id;
+}
+
+// Frontend and backend each carry a copy of the word list (backend rootDir
+// prevents a shared import). A drift means the UI warns about words the API
+// accepts, or vice versa — fail loudly here.
+const fs = await import("node:fs");
+const frontendSrc = fs.readFileSync(
+  new URL("../src/lib/profanity.ts", import.meta.url),
+  "utf8",
+);
+const backendSrc = fs.readFileSync(
+  new URL("./src/profanity.ts", import.meta.url),
+  "utf8",
+);
+const extractWords = (src) => {
+  // Only the PROFANITY_WORDS array body — not words inside comments or the
+  // file's own documentation strings (e.g. "shell", "hell", "fuck" in examples).
+  const body = src.slice(src.indexOf("PROFANITY_WORDS"), src.indexOf("] as const"));
+  return [...body.matchAll(/"([a-z]+)"/g)]
+    .map((m) => m[1])
+    .filter((w) => w.length > 2)
+    .sort()
+    .join(",");
+};
+check(
+  "Frontend and backend profanity lists in sync",
+  extractWords(frontendSrc) === extractWords(backendSrc),
+  `frontend=[${extractWords(frontendSrc)}] backend=[${extractWords(backendSrc)}]`,
+);
+
 const noCsrf = await req("/submit-concern", {
   method: "POST",
   skipCsrf: true,
@@ -431,6 +507,16 @@ check(
 if (concernId) {
   const deleted = await req(`/admin/concerns/${concernId}`, { method: "DELETE" });
   check("Test concern cleaned up", deleted.status === 200, `status=${deleted.status}`);
+}
+if (typeof globalThis.__filterProbeId === "number") {
+  const probeDeleted = await req(`/admin/concerns/${globalThis.__filterProbeId}`, {
+    method: "DELETE",
+  });
+  check(
+    "Filter probe concern cleaned up",
+    probeDeleted.status === 200,
+    `status=${probeDeleted.status}`,
+  );
 }
 
 // Remove any announcement a previous (buggy) run may have left behind.

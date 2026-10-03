@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { findProfanity } from "@/lib/profanity";
 import { submitConcern, type SubmitConcernPayload } from "@/lib/submit-concern-api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,6 +68,12 @@ const concernTypes = ["Complaint", "Question", "Suggestion"] as const;
 
 const MAX_MESSAGE_LENGTH = 2000;
 
+// Profanity rule shared with the backend (backend/src/profanity.ts enforces the
+// same list, so DevTools/curl cannot bypass this). Runs inside the zod schema
+// so a flagged message blocks submit with an inline error, exactly like the
+// other validation rules.
+const PROFANITY_MESSAGE = "Please keep your message respectful — remove inappropriate language.";
+
 const formSchema = z.object({
   last: z.string().trim().min(1, "Last name is required").max(120, "Maximum 120 characters"),
   first: z.string().trim().min(1, "First name is required").max(120, "Maximum 120 characters"),
@@ -90,7 +97,8 @@ const formSchema = z.object({
     .string()
     .trim()
     .min(1, "Message is required")
-    .max(MAX_MESSAGE_LENGTH, `Maximum ${MAX_MESSAGE_LENGTH} characters`),
+    .max(MAX_MESSAGE_LENGTH, `Maximum ${MAX_MESSAGE_LENGTH} characters`)
+    .refine((val) => findProfanity(val).length === 0, { message: PROFANITY_MESSAGE }),
   consent: z.boolean().refine((val) => val === true, {
     message: "Please consent to the data privacy policy to continue.",
   }),
@@ -127,6 +135,10 @@ function SubmitConcernPage() {
   });
 
   const messageLength = form.watch("message")?.length ?? 0;
+  // Live feedback while typing: same matcher as the zod submit rule, so the
+  // warning never disagrees with the validation result.
+  const messageValue = form.watch("message") ?? "";
+  const flaggedWords = useMemo(() => findProfanity(messageValue), [messageValue]);
 
   const onSubmit = async (values: FormValues) => {
     setErrorMessage(null);
@@ -400,6 +412,11 @@ function SubmitConcernPage() {
                     </span>
                   )}
                   {messageLength === 0 && <span />}
+                  {flaggedWords.length > 0 && (
+                    <span className="text-xs text-destructive font-medium">
+                      Please remove inappropriate language to continue.
+                    </span>
+                  )}
                 </div>
                 <FormMessage />
               </FormItem>
