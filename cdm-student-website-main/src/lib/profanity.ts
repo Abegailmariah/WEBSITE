@@ -41,6 +41,37 @@ export const PROFANITY_WORDS = [
   "hayop",
   "punyeta",
   "tarantado",
+  // Tagalog sexual vulgarity (incl. common "pakyu" spelling of "fuck you")
+  "pakyu",
+  "kantot",
+  "kantutan",
+  "tite",
+  "titi",
+  "burat",
+  "bayag",
+  "betlog",
+  "pekpek",
+  "puke",
+  "kiki",
+  "suso",
+  "dede",
+  "jakol",
+  "tamod",
+  "tumbong",
+  "puwet",
+  // Tagalog insults / curses (mild + strong)
+  "inutil",
+  "unggoy",
+  "buwisit",
+  "buisit",
+  "gagu",
+  "ogag",
+  "siraulo",
+  "engot",
+  "mangmang",
+  "hangal",
+  "lintik",
+  "yawa",
 ] as const;
 
 // Leet-speak / symbol substitutions, applied before matching.
@@ -49,7 +80,6 @@ const LEET_MAP: Record<string, string> = {
   "@": "a",
   "3": "e",
   "1": "i",
-  "!": "i",
   "|": "i",
   "0": "o",
   "5": "s",
@@ -75,7 +105,7 @@ export function normalizeForProfanityCheck(input: string): string {
     .replace(/\bf[\*\.\-_~^]+c[\*\.\-_~^]*k\b/g, "fuck")
     .replace(/\bsh[\*\.\-_~^]+t\b/g, "shit")
     .replace(/\bb[\*\.\-_~^]+tch\b/g, "bitch");
-  return unmasked
+  const mapped = unmasked
     .replace(/[\u200b-\u200d\ufeff]/g, "")
     .split("")
     .map((ch) => {
@@ -87,17 +117,25 @@ export function normalizeForProfanityCheck(input: string): string {
       // True separators (spaces, punctuation between words): keep a boundary.
       return " ";
     })
-    .join("")
-    .replace(/(.)\1+/g, "$1");
+    .join("");
+  // Doubled letters from natural spelling ("unggoy", "i.e.") collapse here —
+  // EXCEPT "gg", which would merge "unggoy" into "ungoy" and miss the list.
+  // Protect it with a placeholder through the collapse, then restore.
+  const GG = String.fromCharCode(71, 71).toLowerCase();
+  const SLOT = String.fromCharCode(1);
+  return mapped.split(GG).join(SLOT).replace(/(.)\1+/g, "$1").split(SLOT).join(GG);
 }
 
-/** Build one word-boundary regex from the list (done once per module load). */
-function buildPattern(words: readonly string[]): RegExp {
-  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  return new RegExp(`\\b(${escaped.join("|")})\\b`);
-}
-
-const PATTERN = buildPattern(PROFANITY_WORDS);
+/**
+ * Extra multi-word / spaced variants that the word-boundary pass misses.
+ */
+const EXTRA_PATTERNS: { pattern: RegExp; label: string }[] = [
+  // "sira ulo" written with a space still means "siraulo".
+  { pattern: /\bsira\s+ulo\b/, label: "siraulo" },
+  // "Fuck you" in latin letters collapses to "fuck"+"you" — catch the phrase
+  // explicitly so the spaced variant is reported as fuck.
+  { pattern: /\bfuck\s+you\b/, label: "fuck" },
+];
 
 /**
  * All listed words found in the text (deduplicated). Returns [] when clean.
@@ -110,8 +148,9 @@ export function findProfanity(input: string): string[] {
   for (const word of PROFANITY_WORDS) {
     if (new RegExp(`\\b${word}\\b`).test(normalized)) found.add(word);
   }
-  // Fallback: also test the combined pattern (guards against a bad word list entry).
-  void PATTERN;
+  for (const { pattern, label } of EXTRA_PATTERNS) {
+    if (pattern.test(normalized)) found.add(label);
+  }
   return [...found];
 }
 
